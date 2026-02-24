@@ -5,9 +5,10 @@ import { supabase } from '../lib/supabaseClient';
 
 interface LoginPageProps {
     onLogin: (user: any) => void;
+    onSwitchToRegister: () => void;
 }
 
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -44,14 +45,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 transition={{ duration: 0.3 }}
                 className="max-w-md w-full"
             >
-                <div className="bg-white rounded-3xl shadow-2xl shadow-slate-200/50 p-8 border border-slate-100">
-                    <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-6 shadow-lg shadow-blue-200">
+                <div className="bg-white shadow-2xl shadow-slate-200/50 p-8 border border-slate-100">
+                    {/* <div className="text-center mb-10">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 mb-6 shadow-lg shadow-blue-200">
                             <Lock className="text-white" size={32} />
                         </div>
                         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Portal Login</h1>
                         <p className="text-slate-500 mt-2">Enter your credentials to continue</p>
-                    </div>
+                    </div> */}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
@@ -63,7 +64,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
                                     placeholder="your@email.com"
                                 />
                             </div>
@@ -78,7 +79,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200  focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -88,7 +89,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="flex items-center gap-3 text-red-600 bg-red-50 border border-red-100 p-4 rounded-2xl text-sm font-medium"
+                                className="flex items-center gap-3 text-red-600 bg-red-50 border border-red-100 p-4 text-sm font-medium"
                             >
                                 <AlertCircle size={18} />
                                 <span>{error}</span>
@@ -98,7 +99,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 group"
+                            className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-bold py-4 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 group"
                         >
                             {loading ? (
                                 <Loader2 className="animate-spin" size={20} />
@@ -110,7 +111,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
                     <div className="mt-8 text-center">
                         <p className="text-slate-400 text-sm">
-                            Need help? <a href="#" className="font-semibold text-blue-600 hover:underline">Contact Support</a>
+                            Don't have an account? <button onClick={onSwitchToRegister} className="font-semibold text-blue-600 hover:underline">Register Now</button>
                         </p>
                     </div>
                 </div>

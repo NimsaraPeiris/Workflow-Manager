@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import LoginPage from './pages/loginPage';
+import RegisterPage from './pages/registerPage';
 import DashboardPage from './pages/dashboardPage';
 import { LogOut, LayoutDashboard, User as UserIcon } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
@@ -7,6 +8,7 @@ import { supabase } from './lib/supabaseClient';
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     // Check active sessions and sets the user
@@ -30,9 +32,11 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setAuthView('login');
   };
 
   if (loading) {
+    // ... existing loading UI ...
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-pulse flex flex-col items-center gap-4">
@@ -44,7 +48,17 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
+    return authView === 'login' ? (
+      <LoginPage
+        onLogin={handleLogin}
+        onSwitchToRegister={() => setAuthView('register')}
+      />
+    ) : (
+      <RegisterPage
+        onSwitchToLogin={() => setAuthView('login')}
+        onRegisterSuccess={handleLogin}
+      />
+    );
   }
 
   return (
