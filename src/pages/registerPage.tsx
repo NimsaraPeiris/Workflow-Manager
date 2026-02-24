@@ -111,7 +111,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
                                     className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
-                                    placeholder="John Doe"
+                                    placeholder="Name"
                                 />
                             </div>
                         </div>
@@ -126,7 +126,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
-                                    placeholder="your@email.com"
+                                    placeholder="name@fochant.lk"
                                 />
                             </div>
                         </div>
