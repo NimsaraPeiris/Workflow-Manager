@@ -67,22 +67,19 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
-                // Sync with public.users table to avoid foreign key violations
+                // Sync with public.profiles table to avoid foreign key violations on tasks table
                 const { error: syncError } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .insert([{
                         id: data.user.id,
-                        email: email,
-                        password: password, // As required by schema, though normally handled by Auth
                         full_name: fullName,
                         department_id: departmentId,
                         role: 'USER'
                     }]);
 
                 if (syncError) {
-                    console.error('Error syncing user to public table:', syncError);
-                    setError('Failed to complete profile setup. Please try again.');
-                    // Optionally delete the auth user if sync fails, but that's complex
+                    console.error('Error syncing user to profiles table:', syncError);
+                    setError('Failed to complete profile setup: ' + syncError.message);
                 } else if (data.session) {
                     onRegisterSuccess(data.user);
                 } else {
@@ -207,7 +204,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
 
                     <div className="mt-6 text-center">
                         <p className="text-gray-500 text-sm">
-                            Already have an account? <button onClick={onSwitchToLogin} className="font-medium text-blue-600 hover:underline">Sign In</button>
+                            Already have an account? <button onClick={onSwitchToLogin} className="font-medium text-orange-600 hover:underline">Sign In</button>
                         </p>
                     </div>
                 </div>

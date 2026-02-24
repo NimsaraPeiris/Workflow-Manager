@@ -5,7 +5,11 @@ import { TaskHeader } from '../components/TaskHeader';
 import { TaskList } from '../components/TaskList';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 
-export default function DashboardPage() {
+interface DashboardPageProps {
+    onTaskClick: (taskId: string) => void;
+}
+
+export default function DashboardPage({ onTaskClick }: DashboardPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +59,9 @@ export default function DashboardPage() {
             .insert([
                 {
                     ...newTask,
+                    due_date: newTask.due_date || null,
                     creator_id: user.id,
+                    department_id: user.user_metadata?.department_id,
                     status: 'CREATED'
                 }
             ]);
@@ -101,6 +107,7 @@ export default function DashboardPage() {
                 loading={loading}
                 searchQuery={searchQuery}
                 getStatusColor={getStatusColor}
+                onTaskClick={onTaskClick}
             />
 
             <CreateTaskModal

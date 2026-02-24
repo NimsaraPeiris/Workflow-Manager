@@ -3,21 +3,48 @@ import LoginPage from '../pages/loginPage';
 import RegisterPage from '../pages/registerPage';
 import Header from '../components/Header';
 import DashboardPage from '../pages/dashboard';
+import TaskDetailsPage from '../pages/taskDetails';
 import { supabase } from '../lib/supabaseClient';
+import type { TaskStatus } from '../types';
 
 export default function App() {
     const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [authView, setAuthView] = useState<'login' | 'register'>('login');
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
     useEffect(() => {
+        const checkProfile = async (currentUser: any) => {
+            if (!currentUser) return;
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+
+            if (!profile) {
+                console.log('Syncing missing profile for existing session...');
+                await supabase.from('profiles').insert([{
+                    id: currentUser.id,
+                    full_name: currentUser.user_metadata?.full_name || '',
+                    department_id: currentUser.user_metadata?.department_id,
+                    role: currentUser.user_metadata?.role || 'USER'
+                }]);
+            }
+        };
+
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            if (currentUser) checkProfile(currentUser);
             setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            if (currentUser) checkProfile(currentUser);
         });
 
         return () => subscription.unsubscribe();
@@ -31,6 +58,20 @@ export default function App() {
         await supabase.auth.signOut();
         setUser(null);
         setAuthView('login');
+        setSelectedTaskId(null);
+    };
+
+    const getStatusColor = (status: TaskStatus) => {
+        switch (status) {
+            case 'CREATED': return 'bg-orange-50 text-orange-600 border-orange-100';
+            case 'ACCEPTED': return 'bg-orange-100 text-orange-700 border-orange-200';
+            case 'IN_PROGRESS': return 'bg-amber-50 text-amber-600 border-amber-100';
+            case 'SUBMITTED': return 'bg-orange-50 text-orange-600 border-orange-100';
+            case 'APPROVED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'REJECTED': return 'bg-rose-50 text-rose-600 border-rose-100';
+            case 'CANCELLED': return 'bg-slate-50 text-slate-600 border-slate-100';
+            default: return 'bg-slate-50 text-slate-600 border-slate-100';
+        }
     };
 
     if (loading) {
@@ -63,7 +104,15 @@ export default function App() {
             <Header user={user} onLogout={handleLogout} />
 
             <main className="max-w-5xl mx-auto py-8 px-6">
-                <DashboardPage />
+                {selectedTaskId ? (
+                    <TaskDetailsPage
+                        taskId={selectedTaskId}
+                        onBack={() => setSelectedTaskId(null)}
+                        getStatusColor={getStatusColor}
+                    />
+                ) : (
+                    <DashboardPage onTaskClick={(id) => setSelectedTaskId(id)} />
+                )}
             </main>
         </div>
     );

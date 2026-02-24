@@ -5,13 +5,15 @@ import type { Task, TaskStatus } from '../types';
 interface TaskCardProps {
     task: Task;
     getStatusColor: (status: TaskStatus) => string;
+    onClick: (taskId: string) => void;
 }
 
-export const TaskCard = ({ task, getStatusColor }: TaskCardProps) => {
+export const TaskCard = ({ task, getStatusColor, onClick }: TaskCardProps) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={() => onClick(task.id)}
             className="group bg-white p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer flex items-center justify-between gap-6"
         >
             <div className="flex items-center gap-6 flex-1 min-w-0">

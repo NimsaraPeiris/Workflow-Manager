@@ -28,21 +28,19 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
-                // Check if user exists in public.users
-                const { data: publicUser, error: fetchError } = await supabase
-                    .from('users')
+                // CRITICAL: We use maybeSingle() because for users who were created before the 
+                // profiles sync logic was added, this record will be missing. 
+                // .single() would throw an error and skip the profile creation block.
+                const { data: publicProfile } = await supabase
+                    .from('profiles')
                     .select('id')
                     .eq('id', data.user.id)
-                    .single();
+                    .maybeSingle();
 
-                if (!publicUser && !fetchError) {
-                    // This case shouldn't happen with the new Register logic, but for old users:
-                    // We don't have the password, so this might fail if the DB constraint is strict.
-                    // We try to sync using metadata.
-                    await supabase.from('users').insert([{
+                if (!publicProfile) {
+                    // Create the missing profile record to prevent foreign key errors on tasks
+                    await supabase.from('profiles').insert([{
                         id: data.user.id,
-                        email: data.user.email,
-                        password: 'EXTERNAL_AUTH', // Placeholder since we can't get the real password
                         full_name: data.user.user_metadata?.full_name || '',
                         department_id: data.user.user_metadata?.department_id,
                         role: data.user.user_metadata?.role || 'USER'

@@ -7,9 +7,10 @@ interface TaskListProps {
     loading: boolean;
     searchQuery: string;
     getStatusColor: (status: TaskStatus) => string;
+    onTaskClick: (taskId: string) => void;
 }
 
-export const TaskList = ({ tasks, loading, searchQuery, getStatusColor }: TaskListProps) => {
+export const TaskList = ({ tasks, loading, searchQuery, getStatusColor, onTaskClick }: TaskListProps) => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-100 shadow-sm transition-all">
@@ -37,6 +38,7 @@ export const TaskList = ({ tasks, loading, searchQuery, getStatusColor }: TaskLi
                     key={task.id}
                     task={task}
                     getStatusColor={getStatusColor}
+                    onClick={onTaskClick}
                 />
             ))}
         </div>
