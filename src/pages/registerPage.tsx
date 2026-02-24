@@ -59,7 +59,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                     data: {
                         full_name: fullName,
                         department_id: departmentId,
-                        role: 'USER' // Default role
+                        role: 'USER'
                     }
                 }
             });
@@ -67,7 +67,6 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
-                // In Supabase, if email confirmation is enabled, session might be null
                 if (data.session) {
                     onRegisterSuccess(data.user);
                 } else {
@@ -82,64 +81,64 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
                 className="max-w-md w-full"
             >
-                <div className="bg-white shadow-2xl shadow-slate-200/50 p-8 border border-slate-100">
-                    <div className="flex items-center gap-2 mb-8">
+                <div className="bg-white shadow p-8 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-6">
                         <button
                             onClick={onSwitchToLogin}
-                            className="p-2 -ml-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all rounded-xl"
+                            className="p-1.5 -ml-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
                         >
-                            <ArrowLeft size={20} />
+                            <ArrowLeft size={18} />
                         </button>
-                        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Create Account</h1>
+                        <h1 className="text-lg font-semibold text-gray-900">Create Account</h1>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700 ml-1">Full Name</label>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700">Full Name</label>
                             <div className="relative">
-                                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input
                                     type="text"
                                     required
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 placeholder:text-gray-400 text-sm"
                                     placeholder="Name"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700 ml-1">Email Address</label>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700">Email Address</label>
                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 placeholder:text-gray-400 text-sm"
                                     placeholder="name@fochant.lk"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700 ml-1">Department</label>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700">Department</label>
                             <div className="relative">
-                                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <select
                                     required
                                     value={departmentId}
                                     onChange={(e) => setDepartmentId(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 appearance-none cursor-pointer"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 appearance-none cursor-pointer text-sm"
                                     disabled={fetchingDepts}
                                 >
                                     <option value="">Select Department</option>
@@ -150,17 +149,17 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700 ml-1">Password</label>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700">Password</label>
                             <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input
                                     type="password"
                                     required
                                     minLength={6}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 placeholder:text-gray-400 text-sm"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -168,11 +167,11 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
 
                         {error && (
                             <motion.div
-                                initial={{ opacity: 0, y: -10 }}
+                                initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className={`flex items-center gap-3 p-4 text-sm font-medium border ${error.includes('successful') ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-red-600 bg-red-50 border-red-100'}`}
+                                className={`flex items-center gap-2 p-3 text-sm border ${error.includes('successful') ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-600 bg-red-50 border-red-200'}`}
                             >
-                                <AlertCircle size={18} />
+                                <AlertCircle size={16} />
                                 <span>{error}</span>
                             </motion.div>
                         )}
@@ -180,19 +179,19 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                         <button
                             type="submit"
                             disabled={loading || fetchingDepts}
-                            className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-bold py-4 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 group mt-4"
+                            className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-medium py-2.5 transition-all flex items-center justify-center gap-2 text-sm mt-2"
                         >
                             {loading ? (
-                                <Loader2 className="animate-spin" size={20} />
+                                <Loader2 className="animate-spin" size={18} />
                             ) : (
                                 "Create Account"
                             )}
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center">
-                        <p className="text-slate-400 text-sm">
-                            Already have an account? <button onClick={onSwitchToLogin} className="font-semibold text-blue-600 hover:underline">Sign In</button>
+                    <div className="mt-6 text-center">
+                        <p className="text-gray-500 text-sm">
+                            Already have an account? <button onClick={onSwitchToLogin} className="font-medium text-blue-600 hover:underline">Sign In</button>
                         </p>
                     </div>
                 </div>
