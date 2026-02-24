@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import DashboardPage from '../pages/DashboardPage';
+import LoginPage from '../pages/loginPage';
+import RegisterPage from '../pages/registerPage';
 import Header from '../components/Header';
+import DashboardPage from '../pages/dashboard';
 import { supabase } from '../lib/supabaseClient';
 
 export default function App() {
@@ -37,7 +37,7 @@ export default function App() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="animate-pulse flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                    <div className="w-10 h-10 bg-gray-200"></div>
                     <div className="h-3 w-20 bg-gray-200"></div>
                 </div>
             </div>

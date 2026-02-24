@@ -67,7 +67,23 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
-                if (data.session) {
+                // Sync with public.users table to avoid foreign key violations
+                const { error: syncError } = await supabase
+                    .from('users')
+                    .insert([{
+                        id: data.user.id,
+                        email: email,
+                        password: password, // As required by schema, though normally handled by Auth
+                        full_name: fullName,
+                        department_id: departmentId,
+                        role: 'USER'
+                    }]);
+
+                if (syncError) {
+                    console.error('Error syncing user to public table:', syncError);
+                    setError('Failed to complete profile setup. Please try again.');
+                    // Optionally delete the auth user if sync fails, but that's complex
+                } else if (data.session) {
                     onRegisterSuccess(data.user);
                 } else {
                     setError('Registration successful! Please check your email for confirmation.');

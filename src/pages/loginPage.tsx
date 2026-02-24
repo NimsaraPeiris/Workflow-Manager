@@ -28,6 +28,27 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
+                // Check if user exists in public.users
+                const { data: publicUser, error: fetchError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (!publicUser && !fetchError) {
+                    // This case shouldn't happen with the new Register logic, but for old users:
+                    // We don't have the password, so this might fail if the DB constraint is strict.
+                    // We try to sync using metadata.
+                    await supabase.from('users').insert([{
+                        id: data.user.id,
+                        email: data.user.email,
+                        password: 'EXTERNAL_AUTH', // Placeholder since we can't get the real password
+                        full_name: data.user.user_metadata?.full_name || '',
+                        department_id: data.user.user_metadata?.department_id,
+                        role: data.user.user_metadata?.role || 'USER'
+                    }]);
+                }
+
                 onLogin(data.user);
             }
         } catch (err) {
@@ -104,7 +125,7 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
 
                     <div className="mt-6 text-center">
                         <p className="text-gray-500 text-sm">
-                            Don't have an account? <button onClick={onSwitchToRegister} className="font-medium text-blue-600 hover:underline">Register Now</button>
+                            Don't have an account? <button onClick={onSwitchToRegister} className="font-medium text-orange-600 hover:underline">Register Now</button>
                         </p>
                     </div>
                 </div>

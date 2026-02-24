@@ -11,7 +11,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gray-900 flex items-center justify-center text-white">
                 </div>
-                <span className="font-semibold text-base">Workflow <span className="text-blue-600">Manager</span></span>
+                <span className="font-semibold text-base">Workflow <span className="text-orange-600">Manager</span></span>
             </div>
 
             <div className="flex items-center gap-4">
@@ -24,7 +24,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                             {user.user_metadata?.role || 'User'} • {user.user_metadata?.department || 'General'}
                         </p>
                     </div>
-                    <div className="w-7 h-7 bg-blue-100 flex items-center justify-center text-blue-600">
+                    <div className="w-7 h-7 bg-orange-100 flex items-center justify-center text-orange-600">
                         <UserIcon size={14} />
                     </div>
                 </div>
