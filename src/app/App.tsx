@@ -4,6 +4,7 @@ import RegisterPage from '../pages/registerPage';
 import Header from '../components/Header';
 import DashboardPage from '../pages/dashboard';
 import TaskDetailsPage from '../pages/taskDetails';
+import AuditLogsPage from '../pages/AuditLogs';
 import { supabase } from '../lib/supabaseClient';
 
 import { Sidebar } from '../components/Sidebar';
@@ -17,6 +18,9 @@ export default function App() {
     const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
     const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
     const [highPriorityCount, setHighPriorityCount] = useState(0);
+
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit'>('dashboard');
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -67,6 +71,7 @@ export default function App() {
         setUser(null);
         setAuthView('login');
         setSelectedTaskId(null);
+        setCurrentView('dashboard');
     };
 
     if (loading) {
@@ -96,19 +101,37 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
-            <Header user={user} onLogout={handleLogout} />
+            <Header
+                user={user}
+                onLogout={handleLogout}
+                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            />
 
             <Sidebar
                 departments={departments}
                 taskCounts={taskCounts}
                 selectedDeptId={selectedDeptId}
-                onDeptSelect={setSelectedDeptId}
+                onDeptSelect={(id) => {
+                    setSelectedDeptId(id);
+                    setIsSidebarOpen(false);
+                }}
                 highPriorityCount={highPriorityCount}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                userRole={user.user_metadata?.role}
+                currentView={currentView}
+                onViewChange={(view) => {
+                    setCurrentView(view);
+                    setIsSidebarOpen(false);
+                    if (view === 'audit') setSelectedTaskId(null);
+                }}
             />
 
             <main className="lg:ml-72 pt-16 min-h-screen">
-                <div className="max-w-6xl mx-auto py-8 px-6">
-                    {selectedTaskId ? (
+                <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
+                    {currentView === 'audit' ? (
+                        <AuditLogsPage />
+                    ) : selectedTaskId ? (
                         <TaskDetailsPage
                             taskId={selectedTaskId}
                             onBack={() => setSelectedTaskId(null)}

@@ -1,22 +1,32 @@
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu } from 'lucide-react';
 
 interface HeaderProps {
     user: any;
     onLogout: () => void;
+    onToggleSidebar: () => void;
 }
 
-export default function Header({ user, onLogout }: HeaderProps) {
+export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps) {
     return (
         <nav className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-900 flex items-center justify-center text-white">
+            <div className="flex items-center gap-4">
+                <button
+                    onClick={onToggleSidebar}
+                    className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 lg:hidden"
+                >
+                    <Menu size={20} />
+                </button>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gray-900 flex items-center justify-center text-white">
+                        <span className="text-xs font-bold"></span>
+                    </div>
+                    <span className="font-semibold text-base hidden sm:inline-block">Workflow <span className="text-orange-600">Manager</span></span>
                 </div>
-                <span className="font-semibold text-base">Workflow <span className="text-orange-600">Manager</span></span>
             </div>
 
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 border border-gray-200">
-                    <div className="text-right">
+                    <div className="text-right hidden sm:block">
                         <p className="text-sm font-medium text-gray-900 leading-tight">
                             {user.user_metadata?.email}
                         </p>

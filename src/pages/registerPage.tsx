@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Lock, Mail, User as UserIcon, Building2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import type { Department } from '../types';
+import { auditLogger } from '../lib/auditLogger';
 
 interface RegisterPageProps {
     onSwitchToLogin: () => void;
@@ -60,7 +61,13 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
 
         // 2. Assign Role by Email
         const supervisorEmails = ['it_head@fochant.lk', 'design_head@fochant.lk'];
-        const role = supervisorEmails.includes(email.toLowerCase()) ? 'HEAD' : 'EMPLOYEE';
+        let role = 'EMPLOYEE';
+
+        if (email.toLowerCase() === 'admin@fochant.lk') {
+            role = 'SUPER_ADMIN';
+        } else if (supervisorEmails.includes(email.toLowerCase())) {
+            role = 'HEAD';
+        }
 
         try {
             const { data, error: authError } = await supabase.auth.signUp({
@@ -79,6 +86,11 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                 setError(authError.message);
             } else if (data.user) {
                 if (data.session) {
+                    await auditLogger.log({
+                        userId: data.user.id,
+                        action: 'USER_LOGIN', // Initial registration also counts as first login
+                        entityType: 'Profile'
+                    });
                     onRegisterSuccess(data.user);
                 } else {
                     setError('Registration successful! Please check your email for confirmation.');

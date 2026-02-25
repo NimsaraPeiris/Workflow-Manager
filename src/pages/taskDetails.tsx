@@ -7,6 +7,7 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import type { Task, TaskStatus } from '../types';
 import { Button } from '../components/ui/Button';
+import { auditLogger } from '../lib/auditLogger';
 
 // Refactored Components
 import { TaskMainContent } from '../components/task-details/TaskMainContent';
@@ -30,7 +31,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const [uploading, setUploading] = useState(false);
 
     const userRole = currentUser?.user_metadata?.role;
-    const isHead = userRole === 'SUPERVISOR' || userRole === 'HEAD';
+    const isHead = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR' || userRole === 'HEAD';
 
     useEffect(() => {
         fetchTaskDetails();
@@ -127,17 +128,26 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
     const handleUpdateStatus = async (newStatus: TaskStatus) => {
         setUpdating(true);
+        const oldStatus = task?.status;
         const { error } = await supabase
             .from('tasks')
             .update({ status: newStatus, updated_at: new Date().toISOString() })
             .eq('id', taskId);
 
         if (!error) {
+            await auditLogger.log({
+                userId: currentUser.id,
+                action: 'TASK_STATUS_UPDATE',
+                entityType: 'Task',
+                entityId: taskId,
+                oldData: { status: oldStatus },
+                newData: { status: newStatus }
+            });
             await addActivity({
                 activity_type: 'STATUS_CHANGE',
-                content: `Changed status from ${task?.status} to ${newStatus}`,
+                content: `Changed status from ${oldStatus} to ${newStatus}`,
                 field_name: 'status',
-                old_value: task?.status,
+                old_value: oldStatus,
                 new_value: newStatus
             });
             fetchTaskDetails();
@@ -158,6 +168,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             .eq('id', taskId);
 
         if (!error) {
+            await auditLogger.log({
+                userId: currentUser.id,
+                action: 'TASK_ASSIGN',
+                entityType: 'Task',
+                entityId: taskId,
+                newData: { assignee_id: userId, status: 'ASSIGNED' }
+            });
             await addActivity({
                 activity_type: 'EDIT',
                 content: `Task assigned to ${selectedUser?.full_name || 'employee'}`,

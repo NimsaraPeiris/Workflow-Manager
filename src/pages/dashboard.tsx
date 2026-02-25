@@ -5,6 +5,7 @@ import { TaskHeader } from '../components/TaskHeader';
 import { TaskList } from '../components/TaskList';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { PerformanceTiles } from '../components/PerformanceTiles';
+import { auditLogger } from '../lib/auditLogger';
 
 interface DashboardPageProps {
     onTaskClick: (taskId: string) => void;
@@ -66,7 +67,9 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
 
         const rawRole = currentUser.user_metadata?.role;
         // Normalize role to handle any legacy data
-        const role = (rawRole === 'SUPERVISOR' || rawRole === 'HEAD') ? 'HEAD' : 'EMPLOYEE';
+        let role = (rawRole === 'SUPERVISOR' || rawRole === 'HEAD') ? 'HEAD' : 'EMPLOYEE';
+        if (rawRole === 'SUPER_ADMIN') role = 'SUPER_ADMIN';
+
         const deptId = currentUser.user_metadata?.department_id;
 
         let query = supabase.from('tasks').select('*');
@@ -79,6 +82,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
             // Assignee (Employee): restricted to viewing only tasks assigned to them
             query = query.eq('assignee_id', currentUser.id);
         }
+        // SUPER_ADMIN sees everything (no role filter applied)
 
         if (filterDeptId) {
             query = query.eq('department_id', filterDeptId);
@@ -105,7 +109,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
             return;
         }
 
-        const { error: createError } = await supabase
+        const { data: createdTasks, error: createError } = await supabase
             .from('tasks')
             .insert([
                 {
@@ -116,11 +120,19 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                     creator_id: user.id,
                     status: newTask.assignee_id ? 'ASSIGNED' : 'CREATED'
                 }
-            ]);
+            ])
+            .select();
 
         if (createError) {
             setError(createError.message);
         } else {
+            await auditLogger.log({
+                userId: user.id,
+                action: 'TASK_CREATE',
+                entityType: 'Task',
+                entityId: createdTasks?.[0]?.id,
+                newData: newTask
+            });
             setIsModalOpen(false);
             setNewTask({ title: '', description: '', priority: 'MEDIUM', due_date: '', department_id: '', assignee_id: '' });
             fetchTasks();
@@ -143,7 +155,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 onNewTask={() => setIsModalOpen(true)}
-                userRole={(currentUser.user_metadata?.role === 'SUPERVISOR' || currentUser.user_metadata?.role === 'HEAD') ? 'HEAD' : 'EMPLOYEE'}
+                userRole={(currentUser.user_metadata?.role === 'SUPERVISOR' || currentUser.user_metadata?.role === 'HEAD' || currentUser.user_metadata?.role === 'SUPER_ADMIN') ? 'HEAD' : 'EMPLOYEE'}
             />
 
             {!filterDeptId && !loading && tasks.length > 0 && (

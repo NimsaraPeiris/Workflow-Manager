@@ -58,13 +58,13 @@ export const TaskActivityTimeline = ({
                                         {new Date(act.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                                     </time>
                                 </div>
-                                <div className={`p-4 rounded-lg border ${act.activity_type === 'COMMENT' ? 'bg-slate-50 border-slate-100 text-slate-700' :
+                                <div className={`p-4 border ${act.activity_type === 'COMMENT' ? 'bg-slate-50 border-slate-100 text-slate-700' :
                                     act.activity_type === 'ATTACHMENT' ? 'bg-blue-50/30 border-blue-100 text-blue-900' :
                                         'bg-white border-transparent text-slate-500 italic text-sm'
                                     }`}>
                                     {act.activity_type === 'ATTACHMENT' ? (
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white border border-blue-200 text-blue-500 rounded"><FileText size={20} /></div>
+                                            <div className="p-2 bg-white border border-blue-200 text-blue-500"><FileText size={20} /></div>
                                             <div className="flex-1 truncate">
                                                 <p className="text-sm font-medium truncate">{act.file_name}</p>
                                                 <a href={act.file_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1 uppercase tracking-tighter mt-1">

@@ -5,6 +5,16 @@
 | designer1@fochant.lk        | password123 |
 | designer2@fochant.lk        | password123 |
 
+admin@fochant.lk
+nimsara
+
+it_head@fochant.lk
+dilusha 
+
+designer2@fochant.lk
+sasanka
+
+
 Migrations (CLI: prisma migrate, prisma db push) prisma.config.ts > Already configured
 
 Runtime (app code: PrismaClient) Driver adapter passed to PrismaClient constructor > Now configured

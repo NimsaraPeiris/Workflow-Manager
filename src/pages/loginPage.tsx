@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
+import { auditLogger } from '../lib/auditLogger';
+
 interface LoginPageProps {
     onLogin: (user: any) => void;
     onSwitchToRegister: () => void;
@@ -28,6 +30,11 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
+                await auditLogger.log({
+                    userId: data.user.id,
+                    action: 'USER_LOGIN',
+                    entityType: 'System'
+                });
                 onLogin(data.user);
             }
         } catch (err) {

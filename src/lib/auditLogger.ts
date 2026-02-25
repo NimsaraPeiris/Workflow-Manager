@@ -5,6 +5,8 @@ export type AuditAction =
     | 'USER_LOGOUT'
     | 'TASK_CREATE'
     | 'TASK_UPDATE'
+    | 'TASK_STATUS_UPDATE'
+    | 'TASK_ASSIGN'
     | 'TASK_DELETE'
     | 'DEPT_CREATE'
     | 'DEPT_UPDATE'
