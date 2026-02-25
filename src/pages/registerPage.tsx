@@ -51,6 +51,17 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
             return;
         }
 
+        // Validate  Email
+        if (!email.toLowerCase().endsWith('@fochant.lk')) {
+            setError('Please use your organization email (@fochant.lk)');
+            setLoading(false);
+            return;
+        }
+
+        // 2. Assign Role by Email
+        const supervisorEmails = ['it_head@fochant.lk', 'design_head@fochant.lk'];
+        const role = supervisorEmails.includes(email.toLowerCase()) ? 'HEAD' : 'EMPLOYEE';
+
         try {
             const { data, error: authError } = await supabase.auth.signUp({
                 email,
@@ -59,7 +70,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                     data: {
                         full_name: fullName,
                         department_id: departmentId,
-                        role: 'USER'
+                        role: role
                     }
                 }
             });
@@ -67,20 +78,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
-                // Sync with public.profiles table to avoid foreign key violations on tasks table
-                const { error: syncError } = await supabase
-                    .from('profiles')
-                    .insert([{
-                        id: data.user.id,
-                        full_name: fullName,
-                        department_id: departmentId,
-                        role: 'USER'
-                    }]);
-
-                if (syncError) {
-                    console.error('Error syncing user to profiles table:', syncError);
-                    setError('Failed to complete profile setup: ' + syncError.message);
-                } else if (data.session) {
+                if (data.session) {
                     onRegisterSuccess(data.user);
                 } else {
                     setError('Registration successful! Please check your email for confirmation.');
@@ -138,7 +136,7 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 placeholder:text-gray-400 text-sm"
-                                    placeholder="name@fochant.lk"
+                                    placeholder="yourname@fochant.lk"
                                 />
                             </div>
                         </div>

@@ -1,16 +1,15 @@
 import { Loader2 } from 'lucide-react';
-import type { Task, TaskStatus } from '../types';
+import type { Task } from '../types';
 import { TaskCard } from './TaskCard';
 
 interface TaskListProps {
     tasks: Task[];
     loading: boolean;
     searchQuery: string;
-    getStatusColor: (status: TaskStatus) => string;
     onTaskClick: (taskId: string) => void;
 }
 
-export const TaskList = ({ tasks, loading, searchQuery, getStatusColor, onTaskClick }: TaskListProps) => {
+export const TaskList = ({ tasks, loading, searchQuery, onTaskClick }: TaskListProps) => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-100 shadow-sm transition-all">
@@ -37,7 +36,6 @@ export const TaskList = ({ tasks, loading, searchQuery, getStatusColor, onTaskCl
                 <TaskCard
                     key={task.id}
                     task={task}
-                    getStatusColor={getStatusColor}
                     onClick={onTaskClick}
                 />
             ))}

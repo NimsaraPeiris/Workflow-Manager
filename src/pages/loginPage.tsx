@@ -28,25 +28,6 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
             if (authError) {
                 setError(authError.message);
             } else if (data.user) {
-                // CRITICAL: We use maybeSingle() because for users who were created before the 
-                // profiles sync logic was added, this record will be missing. 
-                // .single() would throw an error and skip the profile creation block.
-                const { data: publicProfile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', data.user.id)
-                    .maybeSingle();
-
-                if (!publicProfile) {
-                    // Create the missing profile record to prevent foreign key errors on tasks
-                    await supabase.from('profiles').insert([{
-                        id: data.user.id,
-                        full_name: data.user.user_metadata?.full_name || '',
-                        department_id: data.user.user_metadata?.department_id,
-                        role: data.user.user_metadata?.role || 'USER'
-                    }]);
-                }
-
                 onLogin(data.user);
             }
         } catch (err) {

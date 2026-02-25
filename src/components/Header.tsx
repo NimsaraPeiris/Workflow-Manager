@@ -21,7 +21,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
                             {user.user_metadata?.full_name || user.email}
                         </p>
                         <p className="text-[11px] text-gray-500 uppercase tracking-wider">
-                            {user.user_metadata?.role || 'User'} • {user.user_metadata?.department || 'General'}
+                            {user.user_metadata?.role === 'HEAD' ? 'Head' : 'Employee'} • {user.user_metadata?.department || 'General'}
                         </p>
                     </div>
                     <div className="w-7 h-7 bg-orange-100 flex items-center justify-center text-orange-600">

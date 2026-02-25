@@ -1,3 +1,8 @@
+/**
+ * DATA MODELS
+ * All core entities and types for the Task Manager Application
+ */
+
 export type TaskStatus = 'CREATED' | 'ACCEPTED' | 'ASSIGNED' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export interface User {
@@ -25,6 +30,9 @@ export interface Task {
     due_date: string;
     created_at: string;
     updated_at: string;
+    creator?: { full_name: string };
+    assignee?: { full_name: string };
+    comments?: any[];
 }
 
 export interface Comment {

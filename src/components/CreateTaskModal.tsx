@@ -12,13 +12,19 @@ interface CreateTaskModalProps {
         description: string;
         priority: string;
         due_date: string;
+        department_id: string;
+        assignee_id: string;
     };
     setNewTask: React.Dispatch<React.SetStateAction<{
         title: string;
         description: string;
         priority: string;
         due_date: string;
+        department_id: string;
+        assignee_id: string;
     }>>;
+    departments: any[];
+    employees: any[];
 }
 
 export const CreateTaskModal = ({
@@ -28,7 +34,9 @@ export const CreateTaskModal = ({
     loading,
     error,
     newTask,
-    setNewTask
+    setNewTask,
+    departments,
+    employees
 }: CreateTaskModalProps) => {
     return (
         <AnimatePresence>
@@ -89,6 +97,37 @@ export const CreateTaskModal = ({
                                     className="w-full px-5 py-3 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all resize-none"
                                     placeholder="What needs to be done?"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-slate-700 ml-1">Target Department</label>
+                                <select
+                                    required
+                                    value={newTask.department_id}
+                                    onChange={(e) => setNewTask({ ...newTask, department_id: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer"
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map(dept => (
+                                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-slate-700 ml-1">Assign To (Employee)</label>
+                                <select
+                                    value={newTask.assignee_id}
+                                    onChange={(e) => setNewTask({ ...newTask, assignee_id: e.target.value })}
+                                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer"
+                                >
+                                    <option value="">Select Employee</option>
+                                    {employees.map(emp => (
+                                        <option key={emp.id} value={emp.id}>
+                                            {emp.full_name} ({emp.departments?.name || 'No Dept'})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

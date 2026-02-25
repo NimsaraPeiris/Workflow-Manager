@@ -1,14 +1,25 @@
 import { motion } from 'framer-motion';
 import { Clock, ChevronRight } from 'lucide-react';
 import type { Task, TaskStatus } from '../types';
+import { Badge } from './ui/Badge';
 
 interface TaskCardProps {
     task: Task;
-    getStatusColor: (status: TaskStatus) => string;
     onClick: (taskId: string) => void;
 }
 
-export const TaskCard = ({ task, getStatusColor, onClick }: TaskCardProps) => {
+export const TaskCard = ({ task, onClick }: TaskCardProps) => {
+    const getBadgeVariant = (status: TaskStatus) => {
+        switch (status) {
+            case 'CREATED': return 'orange';
+            case 'IN_PROGRESS': return 'amber';
+            case 'APPROVED': return 'emerald';
+            case 'REJECTED': return 'rose';
+            case 'CANCELLED': return 'slate';
+            default: return 'orange';
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -20,11 +31,11 @@ export const TaskCard = ({ task, getStatusColor, onClick }: TaskCardProps) => {
                 <div className={`w-3 h-12 ${task.priority === 'HIGH' ? 'bg-rose-500' : task.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                        <span className={`px-3 py-1 text-[11px] border ${getStatusColor(task.status)}`}>
+                        <Badge variant={getBadgeVariant(task.status)}>
                             {task.status}
-                        </span>
+                        </Badge>
                         {task.due_date && (
-                            <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                            <span className="flex items-center gap-1 text-[11px] text-slate-400 font-bold uppercase tracking-widest">
                                 <Clock size={12} />
                                 {new Date(task.due_date).toLocaleDateString()}
                             </span>
@@ -41,13 +52,13 @@ export const TaskCard = ({ task, getStatusColor, onClick }: TaskCardProps) => {
 
             <div className="flex items-center gap-4">
                 <div className="flex -space-x-2">
-                    <div className="w-8 h-8 bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] text-slate-500">
+                    <div className="w-8 h-8 bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] text-slate-500 font-bold">
                         {task.id.slice(0, 2).toUpperCase()}
                     </div>
                 </div>
-                <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 transition-all">
+                <div className="p-2 text-slate-300 group-hover:text-orange-600 transition-all">
                     <ChevronRight size={20} />
-                </button>
+                </div>
             </div>
         </motion.div>
     );
