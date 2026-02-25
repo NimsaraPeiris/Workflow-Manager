@@ -4,6 +4,7 @@ import type { Task } from '../types';
 import { TaskHeader } from '../components/TaskHeader';
 import { TaskList } from '../components/TaskList';
 import { CreateTaskModal } from '../components/CreateTaskModal';
+import { PerformanceTiles } from '../components/PerformanceTiles';
 
 interface DashboardPageProps {
     onTaskClick: (taskId: string) => void;
@@ -144,6 +145,10 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 onNewTask={() => setIsModalOpen(true)}
                 userRole={(currentUser.user_metadata?.role === 'SUPERVISOR' || currentUser.user_metadata?.role === 'HEAD') ? 'HEAD' : 'EMPLOYEE'}
             />
+
+            {!filterDeptId && !loading && tasks.length > 0 && (
+                <PerformanceTiles tasks={tasks} />
+            )}
 
             {highPriorityTasks.length > 0 && (
                 <div className="space-y-4">

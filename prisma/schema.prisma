@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User Profiles linked to Auth
+model Profile {
+  id            String    @id @db.Uuid
+  full_name     String?
+  role          String?   @default("EMPLOYEE")
+  department_id String?   @db.Uuid
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  department     Department?    @relation(fields: [department_id], references: [id])
+  tasks_created  Task[]         @relation("CreatedTasks")
+  tasks_assigned Task[]         @relation("AssignedTasks")
+  activities     TaskActivity[]
+
+  @@map("profiles")
+}
+
+// Departments
+model Department {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  profiles Profile[]
+  tasks    Task[]
+
+  @@map("departments")
+}
+
+// Tasks
+model Task {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  description   String?
+  status        String    @default("CREATED")
+  priority      String    @default("MEDIUM")
+  due_date      DateTime? @db.Timestamptz(6)
+  creator_id    String    @db.Uuid
+  assignee_id   String?   @db.Uuid
+  department_id String?   @db.Uuid
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  creator    Profile        @relation("CreatedTasks", fields: [creator_id], references: [id])
+  assignee   Profile?       @relation("AssignedTasks", fields: [assignee_id], references: [id])
+  department Department?    @relation(fields: [department_id], references: [id])
+  activities TaskActivity[]
+
+  @@map("tasks")
+}
+
+// Unified Activity Log
+model TaskActivity {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  task_id       String    @db.Uuid
+  user_id       String    @db.Uuid
+  activity_type String // COMMENT, STATUS_CHANGE, EDIT, ATTACHMENT
+  content       String?
+  field_name    String?
+  old_value     String?
+  new_value     String?
+  file_url      String?
+  file_name     String?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  task    Task    @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [user_id], references: [id])
+
+  @@map("task_activities")
+}
