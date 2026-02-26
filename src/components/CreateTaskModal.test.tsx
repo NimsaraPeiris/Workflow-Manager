@@ -36,15 +36,14 @@ describe('CreateTaskModal', () => {
 
     it('renders correctly when open', () => {
         render(<CreateTaskModal {...mockProps} />);
-        expect(screen.getByText('Create Task')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /create task/i, level: 2 })).toBeInTheDocument();
         expect(screen.getByPlaceholderText('e.g. Design Landing Page')).toBeInTheDocument();
     });
 
     it('calls onClose when close button or backdrop is clicked', () => {
         render(<CreateTaskModal {...mockProps} />);
-        const closeBtn = screen.getByRole('button', { name: '' }); // Search for the X icon button
-        // Looking at the code line 67: <X size={24} />
-        // It's better to find by the text "Create Task" parent or just use getAllByRole('button')[0]
+        // Click the X button (the only button without text or with a specific aria name if any)
+        // From code: <X size={24} /> is in a button.
         fireEvent.click(screen.getAllByRole('button')[0]);
         expect(mockProps.onClose).toHaveBeenCalled();
     });
@@ -58,11 +57,12 @@ describe('CreateTaskModal', () => {
 
     it('shows loading state on submit button', () => {
         render(<CreateTaskModal {...mockProps} loading={true} />);
-        const submitBtn = screen.getByRole('button', { name: /Create Task/i });
-        // Wait, the loader replaces the text or is next to it?
-        // Line 163: {loading? Loader : ... }
-        // So the text "Create Task" won't be there.
-        expect(screen.queryByText('Create Task')).not.toBeInTheDocument();
+        // The header "Create Task" still exists
+        expect(screen.getByRole('heading', { name: /create task/i, level: 2 })).toBeInTheDocument();
+        // But the button text should be gone
+        const submitBtn = screen.getAllByRole('button')[1]; // Second button is submit
+        expect(submitBtn).toBeDisabled();
+        expect(submitBtn).not.toHaveTextContent('Create Task');
     });
 
     it('shows error message if provided', () => {
