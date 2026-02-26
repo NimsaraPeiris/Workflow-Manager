@@ -135,22 +135,11 @@ export const Sidebar = ({
                             ))}
                         </div>
                     </div>
-
-                    {/* Quick Filters Placeholder */}
-                    <div>
-                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Shortcuts</h3>
-                        <div className="space-y-1">
-                            <button className="w-full flex items-center gap-3 p-3 text-slate-500 hover:bg-slate-50 transition-all text-sm italic">
-                                <Bookmark size={16} />
-                                <span>Saved views coming soon</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-100 bg-slate-50/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold">
+                        <div className="w-8 h-8 bg-orange-600 flex items-center justify-center text-white text-xs font-bold">
                             WM
                         </div>
                         <div>

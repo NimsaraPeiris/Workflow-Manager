@@ -43,7 +43,17 @@ export default function App() {
     }, [user]);
 
     const fetchStats = async () => {
-        const { data: depts } = await supabase.from('departments').select('*').order('name');
+        const userRole = user?.user_metadata?.role;
+        const userDeptId = user?.user_metadata?.department_id;
+
+        let deptQuery = supabase.from('departments').select('*').order('name');
+
+        // Apply filtering logic: Only SUPER_ADMIN sees all departments
+        if (userRole !== 'SUPER_ADMIN' && userDeptId) {
+            deptQuery = deptQuery.eq('id', userDeptId);
+        }
+
+        const { data: depts } = await deptQuery;
         if (depts) setDepartments(depts);
 
         const { data: tasks } = await supabase.from('tasks').select('id, department_id, priority');

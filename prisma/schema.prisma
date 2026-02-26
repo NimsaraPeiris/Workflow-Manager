@@ -12,11 +12,11 @@ model Profile {
   id             String         @id @db.Uuid
   full_name      String?
   department_id  String?        @db.Uuid
-  role           String?        @default("USER")
+  role           user_role?     @default(USER)
   updated_at     DateTime?      @default(now()) @db.Timestamptz(6)
-  comments       comments[]
+  comments       Comment[]
   department     Department?    @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users          auth_users     @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           auth_users     @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   activities     TaskActivity[]
   tasks_assigned Task[]         @relation("AssignedTasks")
   tasks_created  Task[]         @relation("CreatedTasks")
@@ -27,12 +27,12 @@ model Profile {
 }
 
 model Department {
-  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String         @unique
-  created_at DateTime?      @default(now()) @db.Timestamptz(6)
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String       @unique
+  created_at DateTime?    @default(now()) @db.Timestamptz(6)
   profiles   Profile[]
   tasks      Task[]
-  users      public_users[]
+  users      PublicUser[]
 
   @@map("departments")
   @@schema("public")
@@ -43,14 +43,14 @@ model Task {
   title         String
   description   String?
   status        task_status?   @default(CREATED)
-  priority      String?        @default("MEDIUM")
+  priority      task_priority? @default(MEDIUM)
   creator_id    String?        @db.Uuid
   assignee_id   String?        @db.Uuid
   department_id String?        @db.Uuid
   due_date      DateTime?      @db.Timestamptz(6)
   created_at    DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
-  comments      comments[]
+  comments      Comment[]
   activities    TaskActivity[]
   assignee      Profile?       @relation("AssignedTasks", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   creator       Profile?       @relation("CreatedTasks", fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -504,7 +504,7 @@ model auth_users {
   oauth_consents              oauth_consents[]
   one_time_tokens             one_time_tokens[]
   sessions                    sessions[]
-  profiles                    Profile?
+  profile                     Profile?
 
   @@index([instance_id])
   @@index([is_anonymous])
@@ -512,29 +512,30 @@ model auth_users {
   @@schema("auth")
 }
 
-model comments {
+model Comment {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   task_id    String?   @db.Uuid
   user_id    String?   @db.Uuid
   content    String
   created_at DateTime? @default(now()) @db.Timestamptz(6)
-  tasks      Task?     @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles   Profile?  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  task       Task?     @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profile    Profile?  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([task_id], map: "idx_comments_task")
+  @@map("comments")
   @@schema("public")
 }
 
-model public_users {
+model PublicUser {
   id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email         String      @unique
   password      String
   full_name     String?
-  role          String?     @default("USER")
+  role          user_role?  @default(USER)
   department_id String?     @db.Uuid
   created_at    DateTime?   @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?   @default(now()) @db.Timestamptz(6)
-  departments   Department? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  department    Department? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([email], map: "idx_users_email")
   @@map("users")
@@ -636,6 +637,8 @@ enum user_role {
   REQUESTER_HEAD
   RECEIVING_HEAD
   ASSIGNEE
+  USER
+  ADMIN
 
   @@schema("public")
 }
