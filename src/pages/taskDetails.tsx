@@ -14,6 +14,7 @@ import { TaskMainContent } from '../components/task-details/TaskMainContent';
 import { TaskActivityTimeline } from '../components/task-details/TaskActivityTimeline';
 import { TaskActionsSidebar } from '../components/task-details/TaskActionsSidebar';
 import { AssignEmployeeModal } from '../components/task-details/AssignEmployeeModal';
+import { DecisionModal } from '../components/task-details/DecisionModal';
 
 interface TaskDetailsPageProps {
     taskId: string;
@@ -28,6 +29,8 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const [updating, setUpdating] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
+    const [showDecisionModal, setShowDecisionModal] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState<TaskStatus | null>(null);
     const [uploading, setUploading] = useState(false);
 
     const userRole = currentUser?.user_metadata?.role;
@@ -51,7 +54,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const fetchTaskDetails = async () => {
         setLoading(true);
         try {
-            const { data, error: fetchError } = await supabase
+            let query = supabase
                 .from('tasks')
                 .select(`
                     *,
@@ -63,10 +66,24 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                         profile:profiles(full_name)
                     )
                 `)
-                .eq('id', taskId)
-                .single();
+                .eq('id', taskId);
 
-            if (fetchError) throw fetchError;
+            // Access Control Enforcement
+            const rawRole = currentUser?.user_metadata?.role;
+            const deptId = currentUser?.user_metadata?.department_id;
+
+            if (rawRole === 'HEAD' || rawRole === 'SUPERVISOR') {
+                // Head can only see their own creations or tasks belonging to their department
+                query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+            } else if (rawRole === 'EMPLOYEE' || !rawRole || rawRole === 'USER') {
+                // Employee can only see tasks assigned to them
+                query = query.eq('assignee_id', currentUser.id);
+            }
+            // SUPER_ADMIN has full access
+
+            const { data, error: fetchError } = await (query as any).single();
+
+            if (fetchError) throw new Error("Unauthorized Access: You do not have permission to view this task or it does not exist.");
             setTask(data);
         } catch (err: any) {
             setError(err.message);
@@ -84,11 +101,25 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         file_url?: string;
         file_name?: string;
     }) => {
-        await supabase.from('task_activities').insert([{
+        const { error } = await supabase.from('task_activities').insert([{
             task_id: taskId,
             user_id: currentUser.id,
             ...payload
         }]);
+
+        if (!error && (payload.activity_type === 'COMMENT' || payload.activity_type === 'ATTACHMENT')) {
+            // Ensure major events are captured in the central audit log
+            await auditLogger.log({
+                userId: currentUser.id,
+                action: 'TASK_UPDATE',
+                entityType: 'Task',
+                entityId: taskId,
+                newData: {
+                    type: payload.activity_type,
+                    summary: payload.content || payload.file_name
+                }
+            });
+        }
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,6 +181,49 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 old_value: oldStatus,
                 new_value: newStatus
             });
+            fetchTaskDetails();
+        }
+        setUpdating(false);
+    };
+
+    const handleDecision = async (status: TaskStatus, comment: string) => {
+        setUpdating(true);
+        const oldStatus = task?.status;
+
+        // 1. Update status
+        const { error } = await supabase
+            .from('tasks')
+            .update({ status: status, updated_at: new Date().toISOString() })
+            .eq('id', taskId);
+
+        if (!error) {
+            // 2. Record decision comment
+            await addActivity({
+                activity_type: 'COMMENT',
+                content: `${status.toUpperCase()} FEEDBACK: ${comment}`
+            });
+
+            // 3. Central Audit Log
+            await auditLogger.log({
+                userId: currentUser.id,
+                action: 'TASK_STATUS_UPDATE',
+                entityType: 'Task',
+                entityId: taskId,
+                oldData: { status: oldStatus },
+                newData: { status: status, reason: comment }
+            });
+
+            // 4. Status change marker
+            await addActivity({
+                activity_type: 'STATUS_CHANGE',
+                content: `${status} by requester`,
+                field_name: 'status',
+                old_value: oldStatus,
+                new_value: status
+            });
+
+            setShowDecisionModal(false);
+            setPendingStatus(null);
             fetchTaskDetails();
         }
         setUpdating(false);
@@ -261,6 +335,10 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                         updating={updating}
                         onUpdateStatus={handleUpdateStatus}
                         onShowAssignModal={() => setShowAssignModal(true)}
+                        onShowDecisionModal={(status) => {
+                            setPendingStatus(status);
+                            setShowDecisionModal(true);
+                        }}
                     />
                 </div>
             </div>
@@ -271,6 +349,17 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 onAssign={handleAssign}
                 users={users}
                 taskDeptId={task.department_id}
+            />
+
+            <DecisionModal
+                isOpen={showDecisionModal}
+                onClose={() => {
+                    setShowDecisionModal(false);
+                    setPendingStatus(null);
+                }}
+                onConfirm={handleDecision}
+                status={pendingStatus}
+                loading={updating}
             />
         </motion.div>
     );

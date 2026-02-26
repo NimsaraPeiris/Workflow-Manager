@@ -9,6 +9,7 @@ interface TaskActionsSidebarProps {
     updating: boolean;
     onUpdateStatus: (status: TaskStatus) => void;
     onShowAssignModal: () => void;
+    onShowDecisionModal: (status: TaskStatus) => void;
 }
 
 export const TaskActionsSidebar = ({
@@ -17,7 +18,8 @@ export const TaskActionsSidebar = ({
     isHead,
     updating,
     onUpdateStatus,
-    onShowAssignModal
+    onShowAssignModal,
+    onShowDecisionModal
 }: TaskActionsSidebarProps) => {
     return (
         <div className="bg-white border border-slate-100 shadow-sm p-6 space-y-6">
@@ -54,12 +56,12 @@ export const TaskActionsSidebar = ({
                     <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full">Start Working</Button>
                 )}
                 {currentUser.id === task.assignee_id && task.status === 'IN_PROGRESS' && (
-                    <Button onClick={() => onUpdateStatus('SUBMITTED')} variant="secondary" loading={updating} className="w-full">Submit</Button>
+                    <Button onClick={() => onUpdateStatus('SUBMITTED')} variant="secondary" loading={updating} className="w-full">Submit Task</Button>
                 )}
                 {currentUser.id === task.creator_id && task.status === 'SUBMITTED' && (
                     <div className="grid grid-cols-2 gap-2">
-                        <Button onClick={() => onUpdateStatus('APPROVED')} variant="secondary" loading={updating}>Approve</Button>
-                        <Button onClick={() => onUpdateStatus('REJECTED')} variant="danger" loading={updating}>Reject</Button>
+                        <Button onClick={() => onShowDecisionModal('APPROVED')} variant="secondary" loading={updating}>Approve</Button>
+                        <Button onClick={() => onShowDecisionModal('REJECTED')} variant="danger" loading={updating}>Reject</Button>
                     </div>
                 )}
                 {currentUser.id === task.creator_id && (task.status === 'CREATED' || task.status === 'ACCEPTED' || task.status === 'ASSIGNED') && (
