@@ -54,11 +54,11 @@ export const TaskActionsSidebar = ({
                     <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full">Start Working</Button>
                 )}
                 {currentUser.id === task.assignee_id && task.status === 'IN_PROGRESS' && (
-                    <Button onClick={() => onUpdateStatus('SUBMITTED')} loading={updating} className="w-full">Submit</Button>
+                    <Button onClick={() => onUpdateStatus('SUBMITTED')} variant="secondary" loading={updating} className="w-full">Submit</Button>
                 )}
                 {currentUser.id === task.creator_id && task.status === 'SUBMITTED' && (
                     <div className="grid grid-cols-2 gap-2">
-                        <Button onClick={() => onUpdateStatus('APPROVED')} loading={updating}>Approve</Button>
+                        <Button onClick={() => onUpdateStatus('APPROVED')} variant="secondary" loading={updating}>Approve</Button>
                         <Button onClick={() => onUpdateStatus('REJECTED')} variant="danger" loading={updating}>Reject</Button>
                     </div>
                 )}

@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import DashboardPage from '../pages/dashboard';
 import TaskDetailsPage from '../pages/taskDetails';
 import AuditLogsPage from '../pages/AuditLogs';
+import UserManagementPage from '../pages/UserManagement';
 import { supabase } from '../lib/supabaseClient';
 
 import { Sidebar } from '../components/Sidebar';
@@ -20,7 +21,7 @@ export default function App() {
     const [highPriorityCount, setHighPriorityCount] = useState(0);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [currentView, setCurrentView] = useState<'dashboard' | 'audit'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users'>('dashboard');
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -129,7 +130,9 @@ export default function App() {
 
             <main className="lg:ml-72 pt-16 min-h-screen">
                 <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
-                    {currentView === 'audit' ? (
+                    {currentView === 'users' ? (
+                        <UserManagementPage currentUser={user} />
+                    ) : currentView === 'audit' ? (
                         <AuditLogsPage />
                     ) : selectedTaskId ? (
                         <TaskDetailsPage

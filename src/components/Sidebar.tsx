@@ -9,8 +9,8 @@ interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
     userRole?: string;
-    onViewChange: (view: 'dashboard' | 'audit') => void;
-    currentView: 'dashboard' | 'audit';
+    onViewChange: (view: 'dashboard' | 'audit' | 'users') => void;
+    currentView: 'dashboard' | 'audit' | 'users';
 }
 
 export const Sidebar = ({
@@ -88,6 +88,13 @@ export const Sidebar = ({
                         <div>
                             <h3 className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-4">Administration</h3>
                             <div className="space-y-1">
+                                <button
+                                    onClick={() => onViewChange('users')}
+                                    className={`w-full flex items-center gap-3 p-3 transition-all ${currentView === 'users' ? 'bg-orange-50 text-orange-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Building2 size={18} />
+                                    <span className="text-sm font-medium">User & Dept Management</span>
+                                </button>
                                 <button
                                     onClick={() => onViewChange('audit')}
                                     className={`w-full flex items-center gap-3 p-3 transition-all ${currentView === 'audit' ? 'bg-orange-50 text-orange-600' : 'text-slate-600 hover:bg-slate-50'}`}
