@@ -4,16 +4,16 @@ import {
     ShieldCheck,
     Search,
     Filter,
-    Calendar,
     User as UserIcon,
     RefreshCw,
     Info,
     History
 } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
+import type { AuditLog } from '../../types';
 
 export default function AuditLogsPage() {
-    const [logs, setLogs] = useState<any[]>([]);
+    const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState('ALL');

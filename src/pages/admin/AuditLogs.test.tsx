@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AuditLogsPage from './AuditLogs';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 
-vi.mock('../lib/supabaseClient', () => ({
+vi.mock('../../lib/supabaseClient', () => ({
     supabase: {
         from: vi.fn(() => ({
             select: vi.fn(() => ({

@@ -151,10 +151,10 @@ export const Sidebar = ({
                 <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-100 bg-slate-50/50">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold">
-                            TC
+                            WM
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-slate-900">Task Center</p>
+                            <p className="text-xs font-bold text-slate-900">Workflow Manager</p>
                             <p className="text-[10px] text-slate-500 italic">Fochant Technologies</p>
                         </div>
                     </div>

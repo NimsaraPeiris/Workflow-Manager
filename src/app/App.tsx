@@ -4,8 +4,8 @@ import RegisterPage from '../pages/registerPage';
 import Header from '../components/Header';
 import DashboardPage from '../pages/dashboard';
 import TaskDetailsPage from '../pages/taskDetails';
-import AuditLogsPage from '../pages/AuditLogs';
-import UserManagementPage from '../pages/UserManagement';
+import AuditLogsPage from '../pages/admin/AuditLogs';
+import UserManagementPage from '../pages/admin/UserManagement';
 import { supabase } from '../lib/supabaseClient';
 
 import { Sidebar } from '../components/Sidebar';
