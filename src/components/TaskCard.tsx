@@ -30,13 +30,17 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
         return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     };
 
+    const isOverdue = task.due_date &&
+        new Date(task.due_date) < new Date() &&
+        !['APPROVED', 'CANCELLED'].includes(task.status);
+
     if (variant === 'brief') {
         return (
             <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 onClick={() => onClick(task.id)}
-                className="group bg-white border border-slate-100 py-2 px-4 hover:bg-slate-50 transition-all cursor-pointer rounded-lg flex items-center justify-between gap-4"
+                className={`group bg-white border ${isOverdue ? 'border-rose-100 bg-rose-50/20' : 'border-slate-100'} py-2 px-4 hover:bg-slate-50 transition-all cursor-pointer rounded-lg flex items-center justify-between gap-4`}
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className={`w-1.5 h-6 ${task.priority === 'HIGH' ? 'bg-rose-500' :
@@ -45,12 +49,18 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                     <span className="text-sm font-semibold text-slate-700 truncate group-hover:text-orange-600 transition-colors">
                         {task.title}
                     </span>
+                    {isOverdue && (
+                        <span className="flex items-center gap-1 text-[9px] font-black text-rose-500 uppercase tracking-tighter animate-pulse">
+                            <Clock size={10} />
+                            Overdue
+                        </span>
+                    )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                     <Badge variant={getBadgeVariant(task.status)}>
                         <span className="text-[9px] uppercase tracking-tighter">{task.status.replace('_', ' ')}</span>
                     </Badge>
-                    <div className="text-[10px] font-bold text-slate-400 w-12 text-right">
+                    <div className={`text-[10px] font-bold ${isOverdue ? 'text-rose-500' : 'text-slate-400'} w-12 text-right`}>
                         {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </div>
                     <ChevronRight size={14} className="text-slate-300 group-hover:text-orange-500" />
@@ -64,12 +74,12 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => onClick(task.id)}
-            className="group bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all cursor-pointer overflow-hidden"
+            className={`group bg-white border ${isOverdue ? 'border-rose-100 shadow-rose-50' : 'border-slate-100 shadow-sm'} hover:shadow-xl hover:shadow-slate-200/60 transition-all cursor-pointer overflow-hidden`}
         >
             <div className="flex flex-col md:flex-row md:items-stretch h-full">
                 {/* Priority Sidebar */}
                 <div className={`w-full md:w-1.5 h-1 md:h-auto ${task.priority === 'HIGH' ? 'bg-rose-500' :
-                    task.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'
+                    task.priority === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'
                     }`} />
 
                 <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -89,9 +99,9 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                             </div>
 
                             {task.due_date && (
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">
+                                <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${isOverdue ? 'bg-rose-50 text-rose-600 animate-pulse' : 'bg-slate-50 text-slate-400'}`}>
                                     <Clock size={10} />
-                                    {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    {isOverdue ? 'OVERDUE ' : ''}{new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                 </div>
                             )}
 

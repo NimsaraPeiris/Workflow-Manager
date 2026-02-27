@@ -60,13 +60,13 @@ export const TaskActionsSidebar = ({
                 {currentUser.id === task.assignee_id && task.status === 'IN_PROGRESS' && (
                     <Button onClick={() => onUpdateStatus('SUBMITTED')} variant="secondary" loading={updating} className="w-full">Submit Task</Button>
                 )}
-                {currentUser.id === task.creator_id && task.status === 'SUBMITTED' && (
+                {(currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN') && task.status === 'SUBMITTED' && (
                     <div className="grid grid-cols-2 gap-2">
                         <Button onClick={() => onShowDecisionModal('APPROVED')} variant="secondary" loading={updating}>Approve</Button>
                         <Button onClick={() => onShowDecisionModal('REJECTED')} variant="danger" loading={updating}>Reject</Button>
                     </div>
                 )}
-                {currentUser.id === task.creator_id && task.status === 'CANCEL_REQUESTED' && (
+                {(currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN') && task.status === 'CANCEL_REQUESTED' && (
                     <div className="space-y-3 p-4 bg-orange-50 border border-orange-100 rounded-xl animate-in fade-in slide-in-from-top-2">
                         <div className="flex items-center justify-between mb-2">
                             <p className="text-[10px] text-orange-800 font-bold uppercase tracking-wider">Cancellation Requested</p>

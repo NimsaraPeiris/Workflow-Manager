@@ -15,7 +15,7 @@ describe('PerformanceTiles', () => {
         { id: '1', title: 'Task 1', status: 'APPROVED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
         { id: '2', title: 'Task 2', status: 'IN_PROGRESS', priority: 'MEDIUM', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
         { id: '3', title: 'Task 3', status: 'SUBMITTED', priority: 'LOW', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
-        { id: '4', title: 'Task 4', status: 'REJECTED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
+        { id: '4', title: 'Task 4', status: 'REJECTED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '2020-01-01', updated_at: '' },
     ];
 
     it('renders all 6 performance metric labels', () => {
@@ -23,9 +23,9 @@ describe('PerformanceTiles', () => {
         expect(screen.getByText(/Total Scope/i)).toBeInTheDocument();
         expect(screen.getByText(/Completion/i)).toBeInTheDocument();
         expect(screen.getByText(/Active/i)).toBeInTheDocument();
+        expect(screen.getByText(/Overdue/i)).toBeInTheDocument();
         expect(screen.getByText(/Critical/i)).toBeInTheDocument();
         expect(screen.getByText(/Pending Review/i)).toBeInTheDocument();
-        expect(screen.getByText(/Revisions/i)).toBeInTheDocument();
     });
 
     it('calculates metrics correctly for the provided tasks', () => {
@@ -45,9 +45,9 @@ describe('PerformanceTiles', () => {
         const criticalMatches = screen.getAllByText('2');
         expect(criticalMatches.length).toBeGreaterThanOrEqual(1);
 
-        // Pending Review (SUBMITTED) should be 1
-        // Revisions (REJECTED) should be 1
-        // Completed Tasks should be 1
+        // Overdue (Task 4): Count = 1
+        // Pending Review (SUBMITTED Task 3): Count = 1
+        // Completed Tasks (Task 1): Count = 1
         const matchesOfOne = screen.getAllByText(/1/);
         expect(matchesOfOne.length).toBeGreaterThanOrEqual(3);
     });
@@ -56,7 +56,7 @@ describe('PerformanceTiles', () => {
         render(<PerformanceTiles tasks={[]} />);
         expect(screen.getByText('0%')).toBeInTheDocument();
         const zeros = screen.getAllByText('0');
-        // Total Scope, Active, Critical, Pending Review, Revisions are 0
+        // Total Scope, Active, Overdue, Critical, Pending Review are 0
         expect(zeros.length).toBeGreaterThanOrEqual(5);
     });
 });

@@ -24,7 +24,11 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
     const highPriorityTasks = tasks.filter(t => t.priority === 'HIGH').length;
     const activeTasks = tasks.filter(t => !['APPROVED', 'CANCELLED'].includes(t.status)).length;
     const submittedTasks = tasks.filter(t => t.status === 'SUBMITTED').length;
-    const rejectedTasks = tasks.filter(t => t.status === 'REJECTED').length;
+    const overdueTasks = tasks.filter(t =>
+        t.due_date &&
+        new Date(t.due_date) < new Date() &&
+        !['APPROVED', 'CANCELLED'].includes(t.status)
+    ).length;
 
     const stats = [
         {
@@ -55,13 +59,22 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
             borderColor: 'group-hover:border-blue-200'
         },
         {
+            label: 'Overdue',
+            value: overdueTasks.toString(),
+            detail: 'Missed deadline',
+            icon: Clock,
+            color: 'text-rose-600',
+            bg: 'bg-rose-50/50',
+            borderColor: 'group-hover:border-rose-200'
+        },
+        {
             label: 'Critical',
             value: highPriorityTasks.toString(),
             detail: 'High priority',
             icon: AlertCircle,
-            color: 'text-rose-600',
-            bg: 'bg-rose-50/50',
-            borderColor: 'group-hover:border-rose-200'
+            color: 'text-orange-600',
+            bg: 'bg-orange-50/50',
+            borderColor: 'group-hover:border-orange-200'
         },
         {
             label: 'Pending Review',
@@ -71,15 +84,6 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
             color: 'text-yellow-600',
             bg: 'bg-yellow-50/50',
             borderColor: 'group-hover:border-yellow-200'
-        },
-        {
-            label: 'Revisions',
-            value: rejectedTasks.toString(),
-            detail: 'Needs rework',
-            icon: Clock,
-            color: 'text-orange-600',
-            bg: 'bg-orange-50/50',
-            borderColor: 'group-hover:border-orange-200'
         }
     ];
 

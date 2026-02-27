@@ -155,4 +155,22 @@ describe('TaskDetailsPage', () => {
             expect(screen.queryByText(/Cancel Task/i)).not.toBeInTheDocument();
         });
     });
+
+    it('shows "Approve" and "Reject" for Super Admin even if not creator', async () => {
+        const adminUser = {
+            id: 'admin-1',
+            user_metadata: { role: 'SUPER_ADMIN' }
+        };
+        const taskSubmittedByOther = { ...mockTask, creator_id: 'other-user', status: 'SUBMITTED' };
+
+        const chain = (supabase.from('tasks') as any);
+        chain.single.mockResolvedValue({ data: taskSubmittedByOther, error: null });
+
+        render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={adminUser} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Approve/i)).toBeInTheDocument();
+            expect(screen.getByText(/Reject/i)).toBeInTheDocument();
+        });
+    });
 });

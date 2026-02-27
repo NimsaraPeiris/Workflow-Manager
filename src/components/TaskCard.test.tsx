@@ -36,7 +36,7 @@ describe('TaskCard', () => {
         expect(screen.getByText('Test Description')).toBeInTheDocument();
         // Since we now do .replace('_', ' '), it should be "IN PROGRESS"
         expect(screen.getByText('IN PROGRESS')).toBeInTheDocument();
-        expect(screen.getByText('Dec 31')).toBeInTheDocument();
+        expect(screen.getByText(/Dec 31/i)).toBeInTheDocument();
         expect(screen.getByText('John Creator')).toBeInTheDocument();
         expect(screen.getByText('Jane Assignee')).toBeInTheDocument();
         expect(screen.getByText('Engineering')).toBeInTheDocument();
@@ -55,10 +55,20 @@ describe('TaskCard', () => {
         expect(container.querySelector('.bg-rose-500')).toBeInTheDocument();
 
         rerender(<TaskCard task={{ ...mockTask, priority: 'LOW' }} onClick={vi.fn()} />);
-        expect(container.querySelector('.bg-emerald-500')).toBeInTheDocument();
+        expect(container.querySelector('.bg-green-500')).toBeInTheDocument();
 
         rerender(<TaskCard task={{ ...mockTask, priority: 'MEDIUM' }} onClick={vi.fn()} />);
-        expect(container.querySelector('.bg-amber-500')).toBeInTheDocument();
+        expect(container.querySelector('.bg-yellow-500')).toBeInTheDocument();
+    });
+
+    it('shows overdue indicator when task is past due date', () => {
+        const overdueTask = {
+            ...mockTask,
+            due_date: '2020-01-01', // Definitely in the past
+            status: 'IN_PROGRESS' as const
+        };
+        render(<TaskCard task={overdueTask} onClick={vi.fn()} />);
+        expect(screen.getByText(/OVERDUE/i)).toBeInTheDocument();
     });
 
     it('renders initials correctly', () => {
