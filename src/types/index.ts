@@ -3,7 +3,7 @@
  * All core entities and types for the Task Manager Application
  */
 
-export type TaskStatus = 'CREATED' | 'ACCEPTED' | 'ASSIGNED' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type TaskStatus = 'CREATED' | 'ACCEPTED' | 'ASSIGNED' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'CANCEL_REQUESTED';
 
 export interface User {
     id: string;
@@ -26,6 +26,7 @@ export type AuditAction =
     | 'TASK_UPDATE'
     | 'TASK_STATUS_UPDATE'
     | 'TASK_ASSIGN'
+    | 'TASK_TRANSFER'
     | 'TASK_DELETE'
     | 'DEPT_CREATE'
     | 'DEPT_UPDATE'
@@ -59,6 +60,7 @@ export interface Task {
     updated_at: string;
     creator?: { full_name: string };
     assignee?: { full_name: string };
+    department?: { name: string };
     comments?: any[];
 }
 

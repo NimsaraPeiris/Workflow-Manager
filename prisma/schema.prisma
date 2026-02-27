@@ -629,6 +629,7 @@ enum task_status {
   APPROVED
   REJECTED
   CANCELLED
+  CANCEL_REQUESTED
 
   @@schema("public")
 }

@@ -7,6 +7,7 @@ export type AuditAction =
     | 'TASK_UPDATE'
     | 'TASK_STATUS_UPDATE'
     | 'TASK_ASSIGN'
+    | 'TASK_TRANSFER'
     | 'TASK_DELETE'
     | 'DEPT_CREATE'
     | 'DEPT_UPDATE'

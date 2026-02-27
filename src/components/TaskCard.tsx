@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Clock, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, User as UserIcon, Building2, Flag } from 'lucide-react';
 import type { Task, TaskStatus } from '../types';
 import { Badge } from './ui/Badge';
 
@@ -12,12 +12,21 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
     const getBadgeVariant = (status: TaskStatus) => {
         switch (status) {
             case 'CREATED': return 'orange';
+            case 'ACCEPTED': return 'orange';
+            case 'ASSIGNED': return 'amber';
             case 'IN_PROGRESS': return 'amber';
+            case 'SUBMITTED': return 'orange';
             case 'APPROVED': return 'emerald';
             case 'REJECTED': return 'rose';
             case 'CANCELLED': return 'slate';
+            case 'CANCEL_REQUESTED': return 'rose';
             default: return 'orange';
         }
+    };
+
+    const getInitials = (name?: string) => {
+        if (!name) return '?';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     };
 
     return (
@@ -25,39 +34,83 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => onClick(task.id)}
-            className="group bg-white p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer flex items-center justify-between gap-6"
+            className="group bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all cursor-pointer overflow-hidden rounded-xl"
         >
-            <div className="flex items-center gap-6 flex-1 min-w-0">
-                <div className={`w-3 h-12 ${task.priority === 'HIGH' ? 'bg-rose-500' : task.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                        <Badge variant={getBadgeVariant(task.status)}>
-                            {task.status}
-                        </Badge>
-                        {task.due_date && (
-                            <span className="flex items-center gap-1 text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                                <Clock size={12} />
-                                {new Date(task.due_date).toLocaleDateString()}
-                            </span>
-                        )}
-                    </div>
-                    <h3 className="text-lg text-slate-900 group-hover:text-orange-600 transition-colors truncate">
-                        {task.title}
-                    </h3>
-                    <p className="text-sm text-slate-500 truncate max-w-2xl">
-                        {task.description}
-                    </p>
-                </div>
-            </div>
+            <div className="flex flex-col md:flex-row md:items-stretch h-full">
+                {/* Priority Sidebar */}
+                <div className={`w-full md:w-1.5 h-1 md:h-auto ${task.priority === 'HIGH' ? 'bg-rose-500' :
+                    task.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`} />
 
-            <div className="flex items-center gap-4">
-                <div className="flex -space-x-2">
-                    <div className="w-8 h-8 bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] text-slate-500 font-bold">
-                        {task.id.slice(0, 2).toUpperCase()}
+                <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex-1 min-w-0 space-y-4">
+                        {/* Status and Meta Row */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Badge variant={getBadgeVariant(task.status)}>
+                                {task.status.replace('_', ' ')}
+                            </Badge>
+
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">
+                                <Flag size={10} className={
+                                    task.priority === 'HIGH' ? 'text-rose-500' :
+                                        task.priority === 'MEDIUM' ? 'text-amber-500' : 'text-emerald-500'
+                                } />
+                                {task.priority}
+                            </div>
+
+                            {task.due_date && (
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">
+                                    <Clock size={10} />
+                                    {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                </div>
+                            )}
+
+                            {task.department?.name && (
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-400 uppercase tracking-widest bg-blue-50/50 px-2 py-1 rounded pointer-events-none">
+                                    <Building2 size={10} />
+                                    {task.department.name}
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            <h3 className="text-xl font-medium text-slate-900 group-hover:text-orange-600 transition-colors leading-tight mb-1">
+                                {task.title}
+                            </h3>
+                            <p className="text-sm text-slate-500 line-clamp-1 max-w-3xl">
+                                {task.description || 'No description provided.'}
+                            </p>
+                        </div>
+
+                        {/* Assignee and Creator Info */}
+                        <div className="flex flex-wrap items-center gap-6 pt-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
+                                    {getInitials(task.creator?.full_name)}
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Creator</p>
+                                    <p className="text-xs font-semibold text-slate-700">{task.creator?.full_name || 'System'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div className={`w-6 h-6 rounded-full ${task.assignee_id ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-slate-50 text-slate-400 border-slate-100'} flex items-center justify-center text-[10px] font-bold border`}>
+                                    {task.assignee_id ? getInitials(task.assignee?.full_name) : <UserIcon size={12} />}
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Assignee</p>
+                                    <p className="text-xs font-semibold text-slate-700">{task.assignee?.full_name || 'Pending Assignment'}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div className="p-2 text-slate-300 group-hover:text-orange-600 transition-all">
-                    <ChevronRight size={20} />
+
+                    <div className="flex items-center self-end md:self-center">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-slate-300 group-hover:text-orange-500 group-hover:bg-orange-50 transition-all">
+                            <ChevronRight size={24} />
+                        </div>
+                    </div>
                 </div>
             </div>
         </motion.div>

@@ -12,15 +12,17 @@ interface DashboardPageProps {
     currentUser: any;
     filterDeptId: string | null;
     onRefreshStats: () => void;
+    currentView: 'dashboard' | 'archive' | 'audit' | 'users';
 }
 
-export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, onRefreshStats }: DashboardPageProps) {
+export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, onRefreshStats, currentView }: DashboardPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
     const [error, setError] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
     const [newTask, setNewTask] = useState({
         title: '',
@@ -42,13 +44,27 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
     }, [currentUser, newTask.department_id, filterDeptId]);
 
     const fetchEmployees = async () => {
-        let query = supabase.from('profiles').select('*, departments(name)');
+        const userRole = currentUser?.user_metadata?.role;
+        const userDeptId = currentUser?.user_metadata?.department_id;
 
-        // Only show employees
+        let query = supabase.from('profiles').select('*, departments(name)');
         query = query.eq('role', 'EMPLOYEE');
 
-        // Filter by department if one is selected
-        if (newTask.department_id) {
+        // Only allow direct assignment if:
+        // 1. User is SUPER_ADMIN
+        // 2. User is HEAD and the target department is THEIR department
+        if (userRole !== 'SUPER_ADMIN') {
+            if (newTask.department_id && newTask.department_id !== userDeptId) {
+                setEmployees([]); // Cannot assign to other department's employees directly
+                return;
+            }
+            // For general list, if no dept selected, default to their own
+            if (!newTask.department_id) {
+                query = query.eq('department_id', userDeptId);
+            } else {
+                query = query.eq('department_id', newTask.department_id);
+            }
+        } else if (newTask.department_id) {
             query = query.eq('department_id', newTask.department_id);
         }
 
@@ -72,7 +88,12 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
 
         const deptId = currentUser.user_metadata?.department_id;
 
-        let query = supabase.from('tasks').select('*');
+        let query = supabase.from('tasks').select(`
+            *,
+            creator:profiles!tasks_creator_id_fkey(full_name),
+            assignee:profiles!tasks_assignee_id_fkey(full_name),
+            department:departments(name)
+        `);
 
         if (role === 'HEAD') {
             // Requester Dept Head & Receiving Dept Head combined:
@@ -141,10 +162,29 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
         setCreateLoading(false);
     };
 
-    const filteredTasks = tasks.filter(task =>
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredTasks = tasks.filter(task => {
+        const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const isSuperAdmin = currentUser.user_metadata?.role === 'SUPER_ADMIN';
+
+        // 1. View-based logic
+        if (currentView === 'archive') {
+            // Archive only shows APPROVED tasks
+            if (task.status !== 'APPROVED') return false;
+        } else {
+            // Dashboard overview:
+            if (statusFilter === 'ALL') {
+                // Hide approved tasks by default in the overview for non-super admins
+                if (!isSuperAdmin && task.status === 'APPROVED') return false;
+            } else {
+                // If a specific status is filtered, only show that
+                if (task.status !== statusFilter) return false;
+            }
+        }
+
+        return matchesSearch;
+    });
 
     const highPriorityTasks = filteredTasks.filter(t => t.priority === 'HIGH');
     const normalTasks = filteredTasks.filter(t => t.priority !== 'HIGH');
@@ -156,6 +196,9 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 setSearchQuery={setSearchQuery}
                 onNewTask={() => setIsModalOpen(true)}
                 userRole={(currentUser.user_metadata?.role === 'SUPERVISOR' || currentUser.user_metadata?.role === 'HEAD' || currentUser.user_metadata?.role === 'SUPER_ADMIN') ? 'HEAD' : 'EMPLOYEE'}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                currentView={currentView}
             />
 
             {!filterDeptId && !loading && tasks.length > 0 && (
@@ -199,6 +242,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 setNewTask={setNewTask}
                 departments={departments}
                 employees={employees}
+                currentUser={currentUser}
             />
         </div>
     );

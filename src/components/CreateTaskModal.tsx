@@ -25,6 +25,7 @@ interface CreateTaskModalProps {
     }>>;
     departments: any[];
     employees: any[];
+    currentUser: any;
 }
 
 export const CreateTaskModal = ({
@@ -36,8 +37,13 @@ export const CreateTaskModal = ({
     newTask,
     setNewTask,
     departments,
-    employees
+    employees,
+    currentUser
 }: CreateTaskModalProps) => {
+    const userRole = currentUser?.user_metadata?.role;
+    const userDeptId = currentUser?.user_metadata?.department_id;
+    const isRestricted = !!(userRole !== 'SUPER_ADMIN' && newTask.department_id && newTask.department_id !== userDeptId);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -116,18 +122,27 @@ export const CreateTaskModal = ({
 
                             <div className="space-y-2">
                                 <label className="text-sm text-slate-700 ml-1">Assign To (Employee)</label>
-                                <select
-                                    value={newTask.assignee_id}
-                                    onChange={(e) => setNewTask({ ...newTask, assignee_id: e.target.value })}
-                                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="">Select Employee</option>
-                                    {employees.map(emp => (
-                                        <option key={emp.id} value={emp.id}>
-                                            {emp.full_name} ({emp.departments?.name || 'No Dept'})
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        value={newTask.assignee_id}
+                                        onChange={(e) => setNewTask({ ...newTask, assignee_id: e.target.value })}
+                                        disabled={isRestricted}
+                                        className={`w-full px-5 py-3 border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none ${isRestricted ? 'bg-slate-100 cursor-not-allowed text-slate-400' : 'bg-slate-50 cursor-pointer'}`}
+                                    >
+                                        <option value="">{isRestricted ? 'Restricted: Target Head will assign' : 'Select Employee'}</option>
+                                        {employees.map(emp => (
+                                            <option key={emp.id} value={emp.id}>
+                                                {emp.full_name} ({emp.departments?.name || 'No Dept'})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {isRestricted && (
+                                        <div className="mt-2 flex items-center gap-1.5 p-2 bg-orange-50 border border-orange-100 rounded text-[10px] text-orange-700 font-medium animate-in fade-in slide-in-from-top-1">
+                                            <AlertCircle size={12} />
+                                            <span>As a Department Head, you can only assign employees within your own department. The target department head will receive this task for assignment.</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

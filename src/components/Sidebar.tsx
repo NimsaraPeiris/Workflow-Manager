@@ -1,4 +1,4 @@
-import { Layout, Building2, AlertCircle, Bookmark, X, ShieldCheck } from 'lucide-react';
+import { Layout, Building2, AlertCircle, X, ShieldCheck, Archive } from 'lucide-react';
 
 interface SidebarProps {
     departments: any[];
@@ -9,8 +9,8 @@ interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
     userRole?: string;
-    onViewChange: (view: 'dashboard' | 'audit' | 'users') => void;
-    currentView: 'dashboard' | 'audit' | 'users';
+    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'archive') => void;
+    currentView: 'dashboard' | 'audit' | 'users' | 'archive';
 }
 
 export const Sidebar = ({
@@ -79,6 +79,17 @@ export const Sidebar = ({
                                         {highPriorityCount}
                                     </span>
                                 )}
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    onDeptSelect(null);
+                                    onViewChange('archive');
+                                }}
+                                className={`w-full flex items-center gap-3 p-3 transition-all ${currentView === 'archive' ? 'bg-orange-50 text-orange-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                <Archive size={18} />
+                                <span className="text-sm font-medium">Completed Archive</span>
                             </button>
                         </div>
                     </div>

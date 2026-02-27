@@ -10,6 +10,7 @@ interface TaskActionsSidebarProps {
     onUpdateStatus: (status: TaskStatus) => void;
     onShowAssignModal: () => void;
     onShowDecisionModal: (status: TaskStatus) => void;
+    cancellationRequester?: string;
 }
 
 export const TaskActionsSidebar = ({
@@ -19,7 +20,8 @@ export const TaskActionsSidebar = ({
     updating,
     onUpdateStatus,
     onShowAssignModal,
-    onShowDecisionModal
+    onShowDecisionModal,
+    cancellationRequester
 }: TaskActionsSidebarProps) => {
     return (
         <div className="bg-white border border-slate-100 shadow-sm p-6 space-y-6">
@@ -64,8 +66,29 @@ export const TaskActionsSidebar = ({
                         <Button onClick={() => onShowDecisionModal('REJECTED')} variant="danger" loading={updating}>Reject</Button>
                     </div>
                 )}
-                {currentUser.id === task.creator_id && (task.status === 'CREATED' || task.status === 'ACCEPTED' || task.status === 'ASSIGNED') && (
-                    <Button onClick={() => onUpdateStatus('CANCELLED')} variant="outline" className="w-full">Cancel</Button>
+                {currentUser.id === task.creator_id && task.status === 'CANCEL_REQUESTED' && (
+                    <div className="space-y-3 p-4 bg-orange-50 border border-orange-100 rounded-xl animate-in fade-in slide-in-from-top-2">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] text-orange-800 font-bold uppercase tracking-wider">Cancellation Requested</p>
+                            {cancellationRequester && (
+                                <span className="text-[10px] text-orange-600 font-medium italic">by {cancellationRequester}</span>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button onClick={() => onUpdateStatus('CANCELLED')} variant="danger" loading={updating} className="h-9 text-xs">Confirm</Button>
+                            <Button onClick={() => onUpdateStatus('ASSIGNED')} variant="outline" loading={updating} className="h-9 text-xs">Keep Task</Button>
+                        </div>
+                    </div>
+                )}
+
+                {(task.status === 'CREATED' || task.status === 'ACCEPTED' || task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS') && (
+                    <>
+                        {currentUser.id === task.creator_id ? (
+                            <Button onClick={() => onUpdateStatus('CANCELLED')} variant="outline" className="w-full">Cancel Task</Button>
+                        ) : (isHead || currentUser.user_metadata?.role === 'SUPER_ADMIN') ? (
+                            <Button onClick={() => onUpdateStatus('CANCEL_REQUESTED')} variant="outline" className="w-full" loading={updating}>Request Cancellation</Button>
+                        ) : null}
+                    </>
                 )}
             </div>
         </div>

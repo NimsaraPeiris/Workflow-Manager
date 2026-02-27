@@ -9,6 +9,7 @@ import UserManagementPage from '../pages/admin/UserManagement';
 import { supabase } from '../lib/supabaseClient';
 
 import { Sidebar } from '../components/Sidebar';
+import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 
 export default function App() {
     const [user, setUser] = useState<any | null>(null);
@@ -21,7 +22,8 @@ export default function App() {
     const [highPriorityCount, setHighPriorityCount] = useState(0);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'archive'>('dashboard');
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -114,7 +116,7 @@ export default function App() {
         <div className="min-h-screen bg-gray-50 text-gray-900">
             <Header
                 user={user}
-                onLogout={handleLogout}
+                onLogout={() => setShowLogoutConfirm(true)}
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             />
 
@@ -131,9 +133,10 @@ export default function App() {
                 onClose={() => setIsSidebarOpen(false)}
                 userRole={user.user_metadata?.role}
                 currentView={currentView}
-                onViewChange={(view) => {
+                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'archive') => {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
+                    if (view !== 'dashboard') setSelectedDeptId(null);
                     if (view === 'audit') setSelectedTaskId(null);
                 }}
             />
@@ -156,10 +159,20 @@ export default function App() {
                             currentUser={user}
                             filterDeptId={selectedDeptId}
                             onRefreshStats={fetchStats}
+                            currentView={currentView}
                         />
                     )}
                 </div>
             </main>
+            <ConfirmationModal
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+                title="Sign Out"
+                description="Are you sure you want to sign out? You will need to login again to access your tasks."
+                confirmText="Sign Out"
+                variant="danger"
+            />
         </div>
     );
 }

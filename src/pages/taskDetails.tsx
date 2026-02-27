@@ -15,6 +15,7 @@ import { TaskActivityTimeline } from '../components/task-details/TaskActivityTim
 import { TaskActionsSidebar } from '../components/task-details/TaskActionsSidebar';
 import { AssignEmployeeModal } from '../components/task-details/AssignEmployeeModal';
 import { DecisionModal } from '../components/task-details/DecisionModal';
+import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 
 interface TaskDetailsPageProps {
     taskId: string;
@@ -29,17 +30,26 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const [updating, setUpdating] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
+    const [departments, setDepartments] = useState<any[]>([]);
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<TaskStatus | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState({ title: '', description: '', confirmText: '', variant: 'primary' as 'primary' | 'danger' | 'warning' });
 
     const userRole = currentUser?.user_metadata?.role;
     const isHead = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR' || userRole === 'HEAD';
 
     useEffect(() => {
         fetchTaskDetails();
+        fetchDepartments();
         if (isHead) fetchUsers();
     }, [taskId]);
+
+    const fetchDepartments = async () => {
+        const { data } = await supabase.from('departments').select('*').order('name');
+        if (data) setDepartments(data);
+    };
 
     const fetchUsers = async () => {
         const { data } = await supabase
@@ -158,6 +168,50 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     };
 
     const handleUpdateStatus = async (newStatus: TaskStatus) => {
+        const confirmContent: Record<string, { title: string; description: string; confirmText: string; variant: 'primary' | 'danger' | 'warning' }> = {
+            'ACCEPTED': {
+                title: 'Accept Task',
+                description: 'Are you sure you want to accept this task? This signals that your department is now responsible for its completion.',
+                confirmText: 'Yes, Accept Task',
+                variant: 'primary'
+            },
+            'IN_PROGRESS': {
+                title: 'Start Working',
+                description: 'Ready to begin? This will notify stakeholders that work has started on this task.',
+                confirmText: 'Start Now',
+                variant: 'primary'
+            },
+            'SUBMITTED': {
+                title: 'Submit Task',
+                description: 'Are you sure you want to submit this task for approval? Ensure all work is complete.',
+                confirmText: 'Submit for Review',
+                variant: 'warning'
+            },
+            'CANCELLED': {
+                title: 'Cancel Task',
+                description: 'Are you sure you want to cancel this task? This action is permanent and will stop all work.',
+                confirmText: 'Yes, Cancel Task',
+                variant: 'danger'
+            },
+            'CANCEL_REQUESTED': {
+                title: 'Request Cancellation',
+                description: 'This task was created by someone else. Requesting cancellation will send a notification to the creator for final approval.',
+                confirmText: 'Send Request',
+                variant: 'warning'
+            }
+        };
+
+        if (confirmContent[newStatus]) {
+            setPendingStatus(newStatus);
+            setConfirmConfig(confirmContent[newStatus]);
+            setShowConfirmModal(true);
+            return;
+        }
+
+        await executeStatusUpdate(newStatus);
+    };
+
+    const executeStatusUpdate = async (newStatus: TaskStatus) => {
         setUpdating(true);
         const oldStatus = task?.status;
         const { error } = await supabase
@@ -182,6 +236,10 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 new_value: newStatus
             });
             fetchTaskDetails();
+            setShowConfirmModal(false);
+            setPendingStatus(null);
+        } else {
+            alert(`Failed to update status: ${error.message}`);
         }
         setUpdating(false);
     };
@@ -229,32 +287,47 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         setUpdating(false);
     };
 
-    const handleAssign = async (userId: string) => {
+    const handleAssign = async (userId: string | null, newDeptId?: string) => {
         setUpdating(true);
-        const selectedUser = users.find(u => u.id === userId);
+        const updates: any = {
+            updated_at: new Date().toISOString()
+        };
+
+        if (newDeptId) {
+            updates.department_id = newDeptId;
+            updates.assignee_id = null; // Reset assignee when moving depts
+            updates.status = 'CREATED'; // Reset status to CREATED for new dept head to accept
+        } else if (userId) {
+            updates.assignee_id = userId;
+            updates.status = 'ASSIGNED';
+        }
+
         const { error } = await supabase
             .from('tasks')
-            .update({
-                assignee_id: userId,
-                status: 'ASSIGNED',
-                updated_at: new Date().toISOString()
-            })
+            .update(updates)
             .eq('id', taskId);
 
         if (!error) {
+            const selectedUser = users.find(u => u.id === userId);
+            const selectedDept = departments.find(d => d.id === newDeptId);
+
             await auditLogger.log({
                 userId: currentUser.id,
-                action: 'TASK_ASSIGN',
+                action: newDeptId ? 'TASK_TRANSFER' : 'TASK_ASSIGN',
                 entityType: 'Task',
                 entityId: taskId,
-                newData: { assignee_id: userId, status: 'ASSIGNED' }
+                newData: updates
             });
+
             await addActivity({
                 activity_type: 'EDIT',
-                content: `Task assigned to ${selectedUser?.full_name || 'employee'}`,
-                field_name: 'assignee_id',
-                new_value: userId
+                content: newDeptId
+                    ? `Task transferred to department: ${selectedDept?.name || 'Unknown'}`
+                    : `Task assigned to ${selectedUser?.full_name || 'employee'}`,
+                field_name: newDeptId ? 'department_id' : 'assignee_id',
+                new_value: newDeptId || userId || undefined
             });
+
             setShowAssignModal(false);
             fetchTaskDetails();
         }
@@ -268,6 +341,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             case 'APPROVED': return 'emerald';
             case 'REJECTED': return 'rose';
             case 'CANCELLED': return 'slate';
+            case 'CANCEL_REQUESTED': return 'rose';
             default: return 'orange';
         }
     };
@@ -339,6 +413,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             setPendingStatus(status);
                             setShowDecisionModal(true);
                         }}
+                        cancellationRequester={(task as any).activities?.find((a: any) => a.new_value === 'CANCEL_REQUESTED')?.profile?.full_name}
                     />
                 </div>
             </div>
@@ -348,7 +423,9 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 onClose={() => setShowAssignModal(false)}
                 onAssign={handleAssign}
                 users={users}
+                departments={departments}
                 taskDeptId={task.department_id}
+                currentUser={currentUser}
             />
 
             <DecisionModal
@@ -359,6 +436,20 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 }}
                 onConfirm={handleDecision}
                 status={pendingStatus}
+                loading={updating}
+            />
+
+            <ConfirmationModal
+                isOpen={showConfirmModal}
+                onClose={() => {
+                    setShowConfirmModal(false);
+                    setPendingStatus(null);
+                }}
+                onConfirm={() => pendingStatus && executeStatusUpdate(pendingStatus)}
+                title={confirmConfig.title}
+                description={confirmConfig.description}
+                confirmText={confirmConfig.confirmText}
+                variant={confirmConfig.variant}
                 loading={updating}
             />
         </motion.div>
