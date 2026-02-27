@@ -7,7 +7,8 @@ describe('TaskHeader', () => {
         searchQuery: '',
         setSearchQuery: vi.fn(),
         onNewTask: vi.fn(),
-        userRole: 'HEAD'
+        userRole: 'HEAD',
+        currentView: 'dashboard'
     };
 
     it('renders titles correctly', () => {

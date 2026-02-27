@@ -14,8 +14,8 @@ vi.mock('./TaskCard', () => ({
 
 describe('TaskList', () => {
     const mockTasks: Task[] = [
-        { id: '1', title: 'Task 1', status: 'APPROVED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '' },
-        { id: '2', title: 'Task 2', status: 'IN_PROGRESS', priority: 'MEDIUM', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '' },
+        { id: '1', title: 'Task 1', status: 'APPROVED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
+        { id: '2', title: 'Task 2', status: 'IN_PROGRESS', priority: 'MEDIUM', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
     ];
 
     it('renders loader when loading is true', () => {

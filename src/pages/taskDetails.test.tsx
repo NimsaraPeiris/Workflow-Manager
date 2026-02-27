@@ -46,7 +46,7 @@ describe('TaskDetailsPage', () => {
         activities: []
     };
 
-    const createMock = (data: any, isFinished = false) => {
+    const createMock = (data: any) => {
         const mock: any = {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),

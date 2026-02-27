@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import DashboardPage from './dashboard';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -37,7 +37,8 @@ describe('DashboardPage UI & Logic', () => {
         onTaskClick: vi.fn(),
         currentUser: mockUserHead,
         filterDeptId: null,
-        onRefreshStats: vi.fn()
+        onRefreshStats: vi.fn(),
+        currentView: 'dashboard' as const
     };
 
     beforeEach(() => {

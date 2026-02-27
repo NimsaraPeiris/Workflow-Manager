@@ -31,7 +31,8 @@ describe('TaskActionsSidebar', () => {
         isHead: true,
         updating: false,
         onUpdateStatus: vi.fn(),
-        onShowAssignModal: vi.fn()
+        onShowAssignModal: vi.fn(),
+        onShowDecisionModal: vi.fn()
     };
 
     it('shows "Accept Task" for Head in same department when status is CREATED', () => {

@@ -23,7 +23,8 @@ describe('TaskCard', () => {
         created_at: '',
         creator_id: '',
         department_id: '',
-        assignee_id: ''
+        assignee_id: '',
+        updated_at: ''
     };
 
     it('renders task details correctly', () => {

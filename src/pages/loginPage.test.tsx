@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginPage from './loginPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '../lib/supabaseClient';
-import { auditLogger } from '../lib/auditLogger';
 
 // Mock supabase and auditLogger
 vi.mock('../lib/supabaseClient', () => ({
@@ -10,12 +9,6 @@ vi.mock('../lib/supabaseClient', () => ({
         auth: {
             signInWithPassword: vi.fn()
         }
-    }
-}));
-
-vi.mock('../lib/auditLogger', () => ({
-    auditLogger: {
-        log: vi.fn()
     }
 }));
 
