@@ -3,7 +3,6 @@ import {
     AlertCircle,
     ShieldCheck,
     Users,
-    Settings,
     PieChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
