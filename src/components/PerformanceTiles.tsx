@@ -6,7 +6,7 @@ import {
     Zap,
     Clock,
     FileText,
-    ArrowUpRight
+    ArrowUpRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Task } from '../types';
@@ -41,9 +41,9 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
             value: `${completionRate}%`,
             detail: `${completedTasks} finalized`,
             icon: CheckCircle2,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50/50',
-            borderColor: 'group-hover:border-emerald-200'
+            color: 'text-green-600',
+            bg: 'bg-green-50/50',
+            borderColor: 'group-hover:border-green-200'
         },
         {
             label: 'Active',
@@ -68,9 +68,9 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
             value: submittedTasks.toString(),
             detail: 'Needs approval',
             icon: Zap,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50/50',
-            borderColor: 'group-hover:border-amber-200'
+            color: 'text-yellow-600',
+            bg: 'bg-yellow-50/50',
+            borderColor: 'group-hover:border-yellow-200'
         },
         {
             label: 'Revisions',

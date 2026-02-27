@@ -337,8 +337,8 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const getBadgeVariant = (status: TaskStatus) => {
         switch (status) {
             case 'CREATED': return 'orange';
-            case 'IN_PROGRESS': return 'amber';
-            case 'APPROVED': return 'emerald';
+            case 'IN_PROGRESS': return 'yellow';
+            case 'APPROVED': return 'green';
             case 'REJECTED': return 'rose';
             case 'CANCELLED': return 'slate';
             case 'CANCEL_REQUESTED': return 'rose';

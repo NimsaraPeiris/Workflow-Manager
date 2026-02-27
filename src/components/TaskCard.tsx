@@ -14,10 +14,10 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
         switch (status) {
             case 'CREATED': return 'orange';
             case 'ACCEPTED': return 'orange';
-            case 'ASSIGNED': return 'amber';
-            case 'IN_PROGRESS': return 'amber';
+            case 'ASSIGNED': return 'yellow';
+            case 'IN_PROGRESS': return 'yellow';
             case 'SUBMITTED': return 'orange';
-            case 'APPROVED': return 'emerald';
+            case 'APPROVED': return 'green';
             case 'REJECTED': return 'rose';
             case 'CANCELLED': return 'slate';
             case 'CANCEL_REQUESTED': return 'rose';
@@ -39,8 +39,8 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                 className="group bg-white border border-slate-100 py-2 px-4 hover:bg-slate-50 transition-all cursor-pointer rounded-lg flex items-center justify-between gap-4"
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`w-1.5 h-6 rounded-full ${task.priority === 'HIGH' ? 'bg-rose-500' :
-                        task.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'
+                    <div className={`w-1.5 h-6 ${task.priority === 'HIGH' ? 'bg-rose-500' :
+                        task.priority === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'
                         }`} />
                     <span className="text-sm font-semibold text-slate-700 truncate group-hover:text-orange-600 transition-colors">
                         {task.title}
@@ -64,7 +64,7 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => onClick(task.id)}
-            className="group bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all cursor-pointer overflow-hidden rounded-xl"
+            className="group bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all cursor-pointer overflow-hidden"
         >
             <div className="flex flex-col md:flex-row md:items-stretch h-full">
                 {/* Priority Sidebar */}
@@ -83,7 +83,7 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">
                                 <Flag size={10} className={
                                     task.priority === 'HIGH' ? 'text-rose-500' :
-                                        task.priority === 'MEDIUM' ? 'text-amber-500' : 'text-emerald-500'
+                                        task.priority === 'MEDIUM' ? 'text-yellow-500' : 'text-green-500'
                                 } />
                                 {task.priority}
                             </div>

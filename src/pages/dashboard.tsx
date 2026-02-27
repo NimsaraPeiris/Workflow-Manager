@@ -221,7 +221,6 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                     {tasks.length > 0 ? (
                         <div className="space-y-6">
                             <PerformanceTiles tasks={tasks} />
-
                             <div className="pt-4">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">

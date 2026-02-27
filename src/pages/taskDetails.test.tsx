@@ -119,4 +119,40 @@ describe('TaskDetailsPage', () => {
             expect(mockOnBack).toHaveBeenCalled();
         });
     });
+
+    it('shows "Cancel Task" directly for Super Admin even if not creator', async () => {
+        const adminUser = {
+            id: 'admin-1',
+            user_metadata: { role: 'SUPER_ADMIN' }
+        };
+        const taskNotCreatedByAdmin = { ...mockTask, creator_id: 'other-user' };
+
+        const chain = (supabase.from('tasks') as any);
+        chain.single.mockResolvedValue({ data: taskNotCreatedByAdmin, error: null });
+
+        render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={adminUser} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Cancel Task/i)).toBeInTheDocument();
+            expect(screen.queryByText(/Request Cancellation/i)).not.toBeInTheDocument();
+        });
+    });
+
+    it('shows "Request Cancellation" for HEAD role if not creator', async () => {
+        const headUser = {
+            id: 'head-1',
+            user_metadata: { role: 'HEAD', department_id: 'dept-1' }
+        };
+        const taskNotCreatedByHead = { ...mockTask, creator_id: 'other-user', department_id: 'dept-1' };
+
+        const chain = (supabase.from('tasks') as any);
+        chain.single.mockResolvedValue({ data: taskNotCreatedByHead, error: null });
+
+        render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={headUser} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Request Cancellation/i)).toBeInTheDocument();
+            expect(screen.queryByText(/Cancel Task/i)).not.toBeInTheDocument();
+        });
+    });
 });

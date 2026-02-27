@@ -18,8 +18,11 @@ describe('Badge', () => {
         const { rerender } = render(<Badge variant="orange">Orange</Badge>);
         expect(screen.getByText(/Orange/i)).toHaveClass('bg-orange-50', 'text-orange-600');
 
-        rerender(<Badge variant="emerald">Emerald</Badge>);
-        expect(screen.getByText(/Emerald/i)).toHaveClass('bg-emerald-50', 'text-emerald-600');
+        rerender(<Badge variant="green">Green</Badge>);
+        expect(screen.getByText(/Green/i)).toHaveClass('bg-green-50', 'text-green-600');
+
+        rerender(<Badge variant="yellow">Yellow</Badge>);
+        expect(screen.getByText(/Yellow/i)).toHaveClass('bg-yellow-50', 'text-yellow-600');
 
         rerender(<Badge variant="rose">Rose</Badge>);
         expect(screen.getByText(/Rose/i)).toHaveClass('bg-rose-50', 'text-rose-600');

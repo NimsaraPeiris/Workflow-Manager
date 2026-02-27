@@ -80,7 +80,7 @@ export const TaskHeader = ({
                 {userRole === 'HEAD' && currentView === 'dashboard' && (
                     <button
                         onClick={onNewTask}
-                        className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 transition-all shadow-lg shadow-orange-200 rounded-lg text-sm font-bold"
+                        className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 transition-all shadow-lg shadow-orange-200 text-sm font-bold"
                     >
                         <Plus size={18} />
                         <span>New Task</span>

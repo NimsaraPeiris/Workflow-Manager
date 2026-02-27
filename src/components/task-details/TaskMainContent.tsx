@@ -4,7 +4,7 @@ import type { Task, TaskStatus } from '../../types';
 
 interface TaskMainContentProps {
     task: Task;
-    getBadgeVariant: (status: TaskStatus) => "orange" | "amber" | "emerald" | "rose" | "slate";
+    getBadgeVariant: (status: TaskStatus) => "orange" | "yellow" | "green" | "rose" | "slate";
 }
 
 export const TaskMainContent = ({ task, getBadgeVariant }: TaskMainContentProps) => {
@@ -12,7 +12,7 @@ export const TaskMainContent = ({ task, getBadgeVariant }: TaskMainContentProps)
         <div className="bg-white border border-slate-100 shadow-sm p-8">
             <div className="flex items-center gap-3 mb-6">
                 <Badge variant={getBadgeVariant(task.status)}>{task.status}</Badge>
-                <Badge variant={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'amber' : 'emerald'}>
+                <Badge variant={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'yellow' : 'green'}>
                     {task.priority} Priority
                 </Badge>
             </div>

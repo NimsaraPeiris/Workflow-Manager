@@ -83,9 +83,9 @@ export const TaskActionsSidebar = ({
 
                 {(task.status === 'CREATED' || task.status === 'ACCEPTED' || task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS') && (
                     <>
-                        {currentUser.id === task.creator_id ? (
+                        {currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN' ? (
                             <Button onClick={() => onUpdateStatus('CANCELLED')} variant="outline" className="w-full">Cancel Task</Button>
-                        ) : (isHead || currentUser.user_metadata?.role === 'SUPER_ADMIN') ? (
+                        ) : isHead ? (
                             <Button onClick={() => onUpdateStatus('CANCEL_REQUESTED')} variant="outline" className="w-full" loading={updating}>Request Cancellation</Button>
                         ) : null}
                     </>
