@@ -185,6 +185,7 @@ export default function App() {
                 onDeptSelect={(id) => {
                     setSelectedDeptId(id);
                     setIsSidebarOpen(false);
+                    setSelectedTaskId(null); // Return to dashboard view for the selected department
                 }}
                 highPriorityCount={highPriorityCount}
                 isOpen={isSidebarOpen}
@@ -197,8 +198,8 @@ export default function App() {
                 onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled') => {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
+                    setSelectedTaskId(null); // Exit task details when switching views
                     if (view !== 'dashboard' && view !== 'approved' && view !== 'cancelled') setSelectedDeptId(null);
-                    if (view === 'audit') setSelectedTaskId(null);
                 }}
             />
 
