@@ -334,6 +334,39 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         setUpdating(false);
     };
 
+    const handleDateUpdate = async (newDate: string) => {
+        if (!task) return;
+        setUpdating(true);
+        const oldDate = task.due_date;
+
+        const { error } = await supabase
+            .from('tasks')
+            .update({ due_date: newDate, updated_at: new Date().toISOString() })
+            .eq('id', taskId);
+
+        if (!error) {
+            await auditLogger.log({
+                userId: currentUser.id,
+                action: 'TASK_UPDATE',
+                entityType: 'Task',
+                entityId: taskId,
+                oldData: { due_date: oldDate },
+                newData: { due_date: newDate }
+            });
+
+            await addActivity({
+                activity_type: 'EDIT',
+                content: `Due date changed from ${oldDate ? new Date(oldDate).toLocaleDateString() : 'None'} to ${new Date(newDate).toLocaleDateString()}`,
+                field_name: 'due_date',
+                old_value: oldDate,
+                new_value: newDate
+            });
+
+            fetchTaskDetails();
+        }
+        setUpdating(false);
+    };
+
     const getBadgeVariant = (status: TaskStatus) => {
         switch (status) {
             case 'CREATED': return 'orange';
@@ -388,7 +421,12 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                    <TaskMainContent task={task} getBadgeVariant={getBadgeVariant} />
+                    <TaskMainContent
+                        task={task}
+                        getBadgeVariant={getBadgeVariant}
+                        canEdit={currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN'}
+                        onDateUpdate={handleDateUpdate}
+                    />
 
                     <TaskActivityTimeline
                         activities={(task as any).activities}

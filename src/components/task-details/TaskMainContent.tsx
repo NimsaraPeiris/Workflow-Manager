@@ -5,9 +5,11 @@ import type { Task, TaskStatus } from '../../types';
 interface TaskMainContentProps {
     task: Task;
     getBadgeVariant: (status: TaskStatus) => "orange" | "yellow" | "green" | "rose" | "slate";
+    canEdit?: boolean;
+    onDateUpdate?: (newDate: string) => void;
 }
 
-export const TaskMainContent = ({ task, getBadgeVariant }: TaskMainContentProps) => {
+export const TaskMainContent = ({ task, getBadgeVariant, canEdit, onDateUpdate }: TaskMainContentProps) => {
     return (
         <div className="bg-white border border-slate-100 shadow-sm p-8">
             <div className="flex items-center gap-3 mb-6">
@@ -22,12 +24,21 @@ export const TaskMainContent = ({ task, getBadgeVariant }: TaskMainContentProps)
 
             <div className="mt-10 pt-8 border-t border-slate-50 grid grid-cols-2 gap-8">
                 <div className="flex items-start gap-3">
-                    <div className="p-2.5 bg-orange-50 text-orange-600"><Clock size={20} /></div>
-                    <div>
+                    <div className="p-2.5 bg-orange-50 text-orange-600 self-start"><Clock size={20} /></div>
+                    <div className="flex-1">
                         <p className="text-xs text-slate-400 uppercase tracking-widest mb-1 font-semibold">Due Date</p>
-                        <p className="text-slate-700 font-medium">
-                            {task.due_date ? new Date(task.due_date).toLocaleDateString(undefined, { dateStyle: 'long' }) : 'No deadline'}
-                        </p>
+                        {canEdit ? (
+                            <input
+                                type="date"
+                                defaultValue={task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : ''}
+                                onChange={(e) => onDateUpdate?.(e.target.value)}
+                                className="text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all pointer-events-auto"
+                            />
+                        ) : (
+                            <p className="text-slate-700 font-medium">
+                                {task.due_date ? new Date(task.due_date).toLocaleDateString(undefined, { dateStyle: 'long' }) : 'No deadline'}
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-start gap-3">
