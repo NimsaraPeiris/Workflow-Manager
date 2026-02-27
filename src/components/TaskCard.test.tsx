@@ -21,18 +21,25 @@ describe('TaskCard', () => {
         priority: 'HIGH',
         due_date: '2025-12-31',
         created_at: '',
-        creator_id: '',
-        department_id: '',
-        assignee_id: '',
-        updated_at: ''
+        creator_id: 'user-1',
+        department_id: 'dept-1',
+        assignee_id: 'user-2',
+        updated_at: '',
+        creator: { full_name: 'John Creator' },
+        assignee: { full_name: 'Jane Assignee' },
+        department: { name: 'Engineering' }
     };
 
     it('renders task details correctly', () => {
         render(<TaskCard task={mockTask} onClick={vi.fn()} />);
         expect(screen.getByText('Test Task')).toBeInTheDocument();
         expect(screen.getByText('Test Description')).toBeInTheDocument();
-        expect(screen.getByText('IN_PROGRESS')).toBeInTheDocument();
-        expect(screen.getByText('12/31/2025')).toBeInTheDocument();
+        // Since we now do .replace('_', ' '), it should be "IN PROGRESS"
+        expect(screen.getByText('IN PROGRESS')).toBeInTheDocument();
+        expect(screen.getByText('Dec 31')).toBeInTheDocument();
+        expect(screen.getByText('John Creator')).toBeInTheDocument();
+        expect(screen.getByText('Jane Assignee')).toBeInTheDocument();
+        expect(screen.getByText('Engineering')).toBeInTheDocument();
     });
 
     it('calls onClick with task id when clicked', () => {
@@ -54,9 +61,11 @@ describe('TaskCard', () => {
         expect(container.querySelector('.bg-amber-500')).toBeInTheDocument();
     });
 
-    it('renders abbreviated ID', () => {
+    it('renders initials correctly', () => {
         render(<TaskCard task={mockTask} onClick={vi.fn()} />);
-        // First 2 chars of '12345678' is '12'
-        expect(screen.getByText('12')).toBeInTheDocument();
+        // John Creator -> JC
+        expect(screen.getByText('JC')).toBeInTheDocument();
+        // Jane Assignee -> JA
+        expect(screen.getByText('JA')).toBeInTheDocument();
     });
 });

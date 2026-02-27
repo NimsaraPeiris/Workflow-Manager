@@ -6,9 +6,10 @@ import { Badge } from './ui/Badge';
 interface TaskCardProps {
     task: Task;
     onClick: (taskId: string) => void;
+    variant?: 'default' | 'brief';
 }
 
-export const TaskCard = ({ task, onClick }: TaskCardProps) => {
+export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) => {
     const getBadgeVariant = (status: TaskStatus) => {
         switch (status) {
             case 'CREATED': return 'orange';
@@ -28,6 +29,35 @@ export const TaskCard = ({ task, onClick }: TaskCardProps) => {
         if (!name) return '?';
         return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     };
+
+    if (variant === 'brief') {
+        return (
+            <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                onClick={() => onClick(task.id)}
+                className="group bg-white border border-slate-100 py-2 px-4 hover:bg-slate-50 transition-all cursor-pointer rounded-lg flex items-center justify-between gap-4"
+            >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-1.5 h-6 rounded-full ${task.priority === 'HIGH' ? 'bg-rose-500' :
+                        task.priority === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500'
+                        }`} />
+                    <span className="text-sm font-semibold text-slate-700 truncate group-hover:text-orange-600 transition-colors">
+                        {task.title}
+                    </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                    <Badge variant={getBadgeVariant(task.status)}>
+                        <span className="text-[9px] uppercase tracking-tighter">{task.status.replace('_', ' ')}</span>
+                    </Badge>
+                    <div className="text-[10px] font-bold text-slate-400 w-12 text-right">
+                        {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </div>
+                    <ChevronRight size={14} className="text-slate-300 group-hover:text-orange-500" />
+                </div>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div

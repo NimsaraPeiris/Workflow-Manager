@@ -20,9 +20,12 @@ export default function App() {
     const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
     const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
     const [highPriorityCount, setHighPriorityCount] = useState(0);
+    const [externalTaskCount, setExternalTaskCount] = useState(0);
+    const [approvedCount, setApprovedCount] = useState(0);
+    const [cancelledCount, setCancelledCount] = useState(0);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'archive'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled'>('dashboard');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     useEffect(() => {
@@ -41,37 +44,90 @@ export default function App() {
     useEffect(() => {
         if (user) {
             fetchStats();
+            // Employees have no organization view - redirect to their department
+            if (user.user_metadata?.role === 'EMPLOYEE' && !selectedDeptId && currentView === 'dashboard') {
+                setSelectedDeptId(user.user_metadata?.department_id);
+            }
         }
     }, [user]);
+
+    // Dynamic Tab Titles
+    useEffect(() => {
+        if (!user) {
+            document.title = 'Login | Workflow Manager';
+            return;
+        }
+
+        if (selectedTaskId) {
+            document.title = 'Task Details | Workflow Manager';
+            return;
+        }
+
+        const viewTitles: Record<string, string> = {
+            dashboard: 'Dashboard',
+            approved: 'Approved History',
+            cancelled: 'Cancelled Log',
+            audit: 'System Audit',
+            users: 'User Management'
+        };
+
+        document.title = `${viewTitles[currentView] || 'Overview'} | Workflow Manager`;
+    }, [user, currentView, selectedTaskId]);
 
     const fetchStats = async () => {
         const userRole = user?.user_metadata?.role;
         const userDeptId = user?.user_metadata?.department_id;
 
+        // 1. Fetch Departments based on role
         let deptQuery = supabase.from('departments').select('*').order('name');
-
-        // Apply filtering logic: Only SUPER_ADMIN sees all departments
         if (userRole !== 'SUPER_ADMIN' && userDeptId) {
             deptQuery = deptQuery.eq('id', userDeptId);
         }
-
         const { data: depts } = await deptQuery;
         if (depts) setDepartments(depts);
 
-        const { data: tasks } = await supabase.from('tasks').select('id, department_id, priority');
+        // 2. Fetch Tasks for statistics based on role
+        // For 'Organization View' of history, we fetch all approved/cancelled for counts
+        let taskQuery = supabase.from('tasks').select('id, department_id, priority, creator_id, assignee_id, status');
+
+        if (userRole === 'HEAD') {
+            // Include all approved/cancelled tasks for organization metrics, but only active tasks for their department
+            taskQuery = taskQuery.or(`department_id.eq.${userDeptId},creator_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
+        } else if (userRole === 'EMPLOYEE') {
+            taskQuery = taskQuery.or(`assignee_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
+        }
+        // SUPER_ADMIN sees all
+
+        const { data: tasks } = await taskQuery;
         if (tasks) {
             const counts: Record<string, number> = {};
             let highCount = 0;
+            let extCount = 0;
+            let appCount = 0;
+            let canCount = 0;
 
             tasks.forEach((t: any) => {
+                // Count for department sidebar
                 if (t.department_id) {
                     counts[t.department_id] = (counts[t.department_id] || 0) + 1;
                 }
-                if (t.priority === 'HIGH') highCount++;
+
+                // General metrics
+                if (t.priority === 'HIGH' && t.status !== 'APPROVED' && t.status !== 'CANCELLED') highCount++;
+                if (t.status === 'APPROVED') appCount++;
+                if (t.status === 'CANCELLED') canCount++;
+
+                // External tasks for HEADs: created by me but NOT in my department
+                if (userRole === 'HEAD' && t.creator_id === user.id && t.department_id !== userDeptId) {
+                    extCount++;
+                }
             });
 
             setTaskCounts(counts);
             setHighPriorityCount(highCount);
+            setExternalTaskCount(extCount);
+            setApprovedCount(appCount);
+            setCancelledCount(canCount);
         }
     };
 
@@ -132,11 +188,14 @@ export default function App() {
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
                 userRole={user.user_metadata?.role}
+                externalTaskCount={externalTaskCount}
+                approvedCount={approvedCount}
+                cancelledCount={cancelledCount}
                 currentView={currentView}
-                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'archive') => {
+                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled') => {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
-                    if (view !== 'dashboard') setSelectedDeptId(null);
+                    if (view !== 'dashboard' && view !== 'approved' && view !== 'cancelled') setSelectedDeptId(null);
                     if (view === 'audit') setSelectedTaskId(null);
                 }}
             />
@@ -155,9 +214,11 @@ export default function App() {
                         />
                     ) : (
                         <DashboardPage
+                            key={currentView}
                             onTaskClick={(id) => setSelectedTaskId(id)}
                             currentUser={user}
                             filterDeptId={selectedDeptId}
+                            onDeptSelect={setSelectedDeptId}
                             onRefreshStats={fetchStats}
                             currentView={currentView}
                         />

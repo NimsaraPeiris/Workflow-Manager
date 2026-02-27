@@ -18,21 +18,34 @@ const mockProps = {
 describe('Sidebar', () => {
     it('renders overview button', () => {
         render(<Sidebar {...mockProps} />);
-        expect(screen.getByText(/Overview/i)).toBeInTheDocument();
+        expect(screen.getByText(/Organization Overview/i)).toBeInTheDocument();
     });
 
-    it('shows System Audit Logs only for SUPER_ADMIN', () => {
+    it('shows Security Logs only for SUPER_ADMIN', () => {
         const { rerender } = render(<Sidebar {...mockProps} userRole="SUPER_ADMIN" />);
-        expect(screen.getByText(/System Audit Logs/i)).toBeInTheDocument();
+        expect(screen.getByText(/Security Logs/i)).toBeInTheDocument();
 
         rerender(<Sidebar {...mockProps} userRole="EMPLOYEE" />);
-        expect(screen.queryByText(/System Audit Logs/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Security Logs/i)).not.toBeInTheDocument();
     });
 
-    it('calls onViewChange when clicking System Audit Logs', () => {
+    it('calls onViewChange when clicking Security Logs', () => {
         render(<Sidebar {...mockProps} userRole="SUPER_ADMIN" />);
-        const auditBtn = screen.getByText(/System Audit Logs/i);
+        const auditBtn = screen.getByText(/Security Logs/i);
         fireEvent.click(auditBtn);
         expect(mockProps.onViewChange).toHaveBeenCalledWith('audit');
+    });
+
+    it('renders history and log buttons', () => {
+        render(<Sidebar {...mockProps} />);
+        expect(screen.getByText(/Approved History/i)).toBeInTheDocument();
+        expect(screen.getByText(/Cancelled Log/i)).toBeInTheDocument();
+    });
+
+    it('calls onViewChange when clicking Approved History', () => {
+        render(<Sidebar {...mockProps} />);
+        const approvedBtn = screen.getByText(/Approved History/i);
+        fireEvent.click(approvedBtn);
+        expect(mockProps.onViewChange).toHaveBeenCalledWith('approved');
     });
 });

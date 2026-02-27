@@ -11,11 +11,12 @@ interface DashboardPageProps {
     onTaskClick: (taskId: string) => void;
     currentUser: any;
     filterDeptId: string | null;
+    onDeptSelect: (deptId: string | null) => void;
     onRefreshStats: () => void;
-    currentView: 'dashboard' | 'archive' | 'audit' | 'users';
+    currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled';
 }
 
-export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, onRefreshStats, currentView }: DashboardPageProps) {
+export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, onDeptSelect, onRefreshStats, currentView }: DashboardPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -96,16 +97,22 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
         `);
 
         if (role === 'HEAD') {
-            // Requester Dept Head & Receiving Dept Head combined:
-            // See tasks created by them OR tasks addressed to their department
-            query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+            // Heads see all in History views, restricted in Dashboard view
+            if (currentView === 'dashboard') {
+                query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+            }
         } else if (role === 'EMPLOYEE') {
-            // Assignee (Employee): restricted to viewing only tasks assigned to them
-            query = query.eq('assignee_id', currentUser.id);
+            // Employees see all in History views, restricted in Dashboard view
+            if (currentView === 'dashboard') {
+                query = query.eq('assignee_id', currentUser.id);
+            }
         }
         // SUPER_ADMIN sees everything (no role filter applied)
 
-        if (filterDeptId) {
+        if (filterDeptId === 'EXTERNAL') {
+            // Tasks created by me but NOT in my department
+            query = query.eq('creator_id', currentUser.id).neq('department_id', deptId);
+        } else if (filterDeptId) {
             query = query.eq('department_id', filterDeptId);
         }
 
@@ -166,20 +173,19 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
         const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             task.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const isSuperAdmin = currentUser.user_metadata?.role === 'SUPER_ADMIN';
 
         // 1. View-based logic
-        if (currentView === 'archive') {
-            // Archive only shows APPROVED tasks
-            if (task.status !== 'APPROVED') return false;
+        if (statusFilter !== 'ALL') {
+            if (task.status !== statusFilter) return false;
         } else {
-            // Dashboard overview:
-            if (statusFilter === 'ALL') {
-                // Hide approved tasks by default in the overview for non-super admins
-                if (!isSuperAdmin && task.status === 'APPROVED') return false;
+            // No status filter: use view defaults
+            if (currentView === 'approved') {
+                if (task.status !== 'APPROVED') return false;
+            } else if (currentView === 'cancelled') {
+                if (task.status !== 'CANCELLED') return false;
             } else {
-                // If a specific status is filtered, only show that
-                if (task.status !== statusFilter) return false;
+                // Dashboard view: hide approved/cancelled by default
+                if (task.status === 'APPROVED' || task.status === 'CANCELLED') return false;
             }
         }
 
@@ -199,38 +205,91 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 statusFilter={statusFilter}
                 setStatusFilter={setStatusFilter}
                 currentView={currentView}
+                departments={departments}
+                filterDeptId={filterDeptId}
+                onDeptSelect={onDeptSelect}
             />
 
-            {!filterDeptId && !loading && tasks.length > 0 && (
-                <PerformanceTiles tasks={tasks} />
-            )}
-
-            {highPriorityTasks.length > 0 && (
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-rose-600">
-                        <div className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-                        <h2 className="text-sm font-bold uppercase tracking-widest">High Priority Actions</h2>
+            {/* OVERVIEW MODE: Only show performance tiles on Dashboard view */}
+            {!filterDeptId && !loading && currentView === 'dashboard' && (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="h-8 w-1 bg-orange-600 rounded-full" />
+                        <h2 className="text-lg font-bold text-slate-900 tracking-tight">Organization Overview</h2>
                     </div>
-                    <TaskList
-                        tasks={highPriorityTasks}
-                        loading={loading}
-                        searchQuery={searchQuery}
-                        onTaskClick={onTaskClick}
-                    />
+
+                    {tasks.length > 0 ? (
+                        <div className="space-y-6">
+                            <PerformanceTiles tasks={tasks} />
+
+                            <div className="pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                                        {currentUser.user_metadata?.role === 'SUPER_ADMIN' ? 'All Organization Tasks' : 'My Department Tasks'}
+                                    </h3>
+                                    <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
+                                        {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
+                                    </span>
+                                </div>
+                                <TaskList
+                                    tasks={filteredTasks}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    onTaskClick={onTaskClick}
+                                    variant="brief"
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-dashed border-slate-200 p-12 text-center rounded-2xl">
+                            <p className="text-slate-400">No organizational data available for the current period.</p>
+                        </div>
+                    )}
                 </div>
             )}
 
-            <div className="space-y-4">
-                {highPriorityTasks.length > 0 && (
-                    <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">General Tasks</h2>
-                )}
-                <TaskList
-                    tasks={normalTasks}
-                    loading={loading}
-                    searchQuery={searchQuery}
-                    onTaskClick={onTaskClick}
-                />
-            </div>
+            {/* DEPARTMENT VIEW or HISTORY VIEW: Show task lists */}
+            {(filterDeptId || currentView === 'approved' || currentView === 'cancelled') && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {highPriorityTasks.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-rose-600">
+                                <div className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                                <h2 className="text-sm font-bold uppercase tracking-widest">High Priority Actions</h2>
+                            </div>
+                            <TaskList
+                                tasks={highPriorityTasks}
+                                loading={loading}
+                                searchQuery={searchQuery}
+                                onTaskClick={onTaskClick}
+                            />
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                {highPriorityTasks.length > 0 ? 'General Tasks' : 'All Department Tasks'}
+                            </h2>
+                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1">
+                                {normalTasks.length} {normalTasks.length === 1 ? 'Task' : 'Tasks'}
+                            </span>
+                        </div>
+                        <TaskList
+                            tasks={normalTasks}
+                            loading={loading}
+                            searchQuery={searchQuery}
+                            onTaskClick={onTaskClick}
+                        />
+
+                        {tasks.length === 0 && !loading && (
+                            <div className="bg-white border border-slate-100 p-12 text-center rounded-xl">
+                                <p className="text-slate-400 text-sm">No tasks found for this department yet.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <CreateTaskModal
                 isOpen={isModalOpen}

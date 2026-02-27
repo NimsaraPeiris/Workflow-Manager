@@ -37,6 +37,7 @@ describe('DashboardPage UI & Logic', () => {
         onTaskClick: vi.fn(),
         currentUser: mockUserHead,
         filterDeptId: null,
+        onDeptSelect: vi.fn(),
         onRefreshStats: vi.fn(),
         currentView: 'dashboard' as const
     };
@@ -47,7 +48,7 @@ describe('DashboardPage UI & Logic', () => {
 
     it('renders the Dashboard header titles', () => {
         render(<DashboardPage {...mockProps} />);
-        expect(screen.getByText('Tasks')).toBeInTheDocument();
+        expect(screen.getByText('Workflow Management')).toBeInTheDocument();
         expect(screen.getByText(/Manage and track your team's progress/i)).toBeInTheDocument();
     });
 

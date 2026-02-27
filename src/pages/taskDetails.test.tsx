@@ -3,17 +3,41 @@ import TaskDetailsPage from './taskDetails';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '../lib/supabaseClient';
 
-vi.mock('../lib/supabaseClient', () => ({
-    supabase: {
-        from: vi.fn(),
-        storage: {
-            from: vi.fn(() => ({
-                upload: vi.fn(),
-                getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'http://example.com' } }))
-            }))
+// Mock Supabase with a consistent chain pattern
+vi.mock('../lib/supabaseClient', () => {
+    const chains: Record<string, any> = {};
+    const createChain = (data: any = {}) => {
+        const chain: any = {
+            select: vi.fn(() => chain),
+            eq: vi.fn(() => chain),
+            or: vi.fn(() => chain),
+            order: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? data : [], error: null })),
+            single: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? null : data, error: null })),
+            update: vi.fn(() => chain),
+            insert: vi.fn(() => Promise.resolve({ error: null })),
+        };
+        return chain;
+    };
+
+    return {
+        supabase: {
+            from: vi.fn((table: string) => {
+                if (!chains[table]) {
+                    if (table === 'profiles') chains[table] = createChain([{ id: 'worker-1', role: 'EMPLOYEE', full_name: 'Jane Worker' }]);
+                    else if (table === 'departments') chains[table] = createChain([{ id: 'dept-1', name: 'Engineering' }]);
+                    else chains[table] = createChain({});
+                }
+                return chains[table];
+            }),
+            storage: {
+                from: vi.fn(() => ({
+                    upload: vi.fn().mockResolvedValue({ error: null }),
+                    getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'http://example.com' } }))
+                }))
+            }
         }
-    }
-}));
+    };
+});
 
 vi.mock('../lib/auditLogger', () => ({
     auditLogger: {
@@ -24,7 +48,8 @@ vi.mock('../lib/auditLogger', () => ({
 vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className }: any) => <div className={className}>{children}</div>
-    }
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>
 }));
 
 describe('TaskDetailsPage', () => {
@@ -43,31 +68,24 @@ describe('TaskDetailsPage', () => {
         priority: 'HIGH',
         department_id: 'dept-1',
         creator_id: 'user-1',
-        activities: []
-    };
-
-    const createMock = (data: any) => {
-        const mock: any = {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data, error: null }),
-            order: vi.fn().mockResolvedValue({ data, error: null }),
-            insert: vi.fn().mockResolvedValue({ data, error: null }),
-            update: vi.fn().mockReturnThis(),
-        };
-        return mock;
+        assignee_id: 'user-2',
+        due_date: '2025-12-31',
+        created_at: '2025-01-01T00:00:00Z',
+        updated_at: '2025-01-01T00:00:00Z',
+        activities: [],
+        creator: { full_name: 'John Creator' },
+        assignee: { full_name: 'Jane Assignee' },
+        department: { name: 'Engineering' }
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-
-        vi.mocked(supabase.from).mockImplementation((table: string) => {
-            if (table === 'tasks') return createMock(mockTask) as any;
-            return createMock([]) as any;
-        });
     });
 
     it('renders task details correctly', async () => {
+        const chain = (supabase.from('tasks') as any);
+        chain.single.mockResolvedValue({ data: mockTask, error: null });
+
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={mockCurrentUser} />);
 
         await waitFor(() => {
@@ -77,26 +95,22 @@ describe('TaskDetailsPage', () => {
     });
 
     it('shows error if task is not found', async () => {
-        vi.mocked(supabase.from).mockImplementation((table: string) => {
-            if (table === 'tasks') {
-                return {
-                    select: vi.fn().mockReturnThis(),
-                    eq: vi.fn().mockReturnThis(),
-                    single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not Found' } })
-                } as any;
-            }
-            return createMock([]) as any;
-        });
+        const chain = (supabase.from('tasks') as any);
+        chain.single.mockResolvedValue({ data: null, error: { message: 'Not Found' } });
 
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={mockCurrentUser} />);
 
         await waitFor(() => {
             expect(screen.getByText('Error Loading Task')).toBeInTheDocument();
-            expect(screen.getByText('Not Found')).toBeInTheDocument();
+            // Match the custom error phrase from taskDetails.tsx
+            expect(screen.getByText(/Unauthorized Access/i)).toBeInTheDocument();
         });
     });
 
     it('calls onBack when back arrow is clicked', async () => {
+        const chain = (supabase.from('tasks') as any);
+        chain.single.mockResolvedValue({ data: mockTask, error: null });
+
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={mockCurrentUser} />);
 
         await waitFor(() => {

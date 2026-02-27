@@ -8,7 +8,10 @@ vi.mock('../lib/supabaseClient', () => ({
     supabase: {
         auth: {
             signInWithPassword: vi.fn()
-        }
+        },
+        from: vi.fn(() => ({
+            insert: vi.fn().mockResolvedValue({ error: null })
+        }))
     }
 }));
 

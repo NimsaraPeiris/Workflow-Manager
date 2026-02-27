@@ -13,7 +13,7 @@ describe('TaskHeader', () => {
 
     it('renders titles correctly', () => {
         render(<TaskHeader {...mockProps} />);
-        expect(screen.getByText('Tasks')).toBeInTheDocument();
+        expect(screen.getByText('Workflow Management')).toBeInTheDocument();
     });
 
     it('shows New Task button only for HEAD role', () => {

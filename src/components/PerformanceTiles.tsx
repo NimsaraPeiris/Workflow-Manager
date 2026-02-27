@@ -3,9 +3,12 @@ import {
     Activity,
     CheckCircle2,
     AlertCircle,
-    TrendingUp,
-    Zap
+    Zap,
+    Clock,
+    FileText,
+    ArrowUpRight
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Task } from '../types';
 
 interface PerformanceTilesProps {
@@ -19,83 +22,121 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     const highPriorityTasks = tasks.filter(t => t.priority === 'HIGH').length;
-    const pendingTasks = tasks.filter(t => !['APPROVED', 'CANCELLED'].includes(t.status)).length;
-
-    // Efficiency calculation (mocked trend)
-    const efficiency = completionRate > 70 ? 'High' : (completionRate > 40 ? 'Moderate' : 'Critical');
+    const activeTasks = tasks.filter(t => !['APPROVED', 'CANCELLED'].includes(t.status)).length;
+    const submittedTasks = tasks.filter(t => t.status === 'SUBMITTED').length;
+    const rejectedTasks = tasks.filter(t => t.status === 'REJECTED').length;
 
     const stats = [
         {
-            label: 'Completion Rate',
+            label: 'Total Scope',
+            value: totalTasks.toString(),
+            detail: 'All tasks',
+            icon: FileText,
+            color: 'text-indigo-600',
+            bg: 'bg-indigo-50/50',
+            borderColor: 'group-hover:border-indigo-200'
+        },
+        {
+            label: 'Completion',
             value: `${completionRate}%`,
+            detail: `${completedTasks} finalized`,
             icon: CheckCircle2,
             color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            trend: '+12% from last week',
-            trendColor: 'text-emerald-500'
+            bg: 'bg-emerald-50/50',
+            borderColor: 'group-hover:border-emerald-200'
         },
         {
-            label: 'Workflow Velocity',
-            value: efficiency,
-            icon: Zap,
-            color: 'text-orange-600',
-            bg: 'bg-orange-50',
-            trend: 'Stable performance',
-            trendColor: 'text-slate-400'
-        },
-        {
-            label: 'Active Workflows',
-            value: pendingTasks.toString(),
+            label: 'Active',
+            value: activeTasks.toString(),
+            detail: 'In progress',
             icon: Activity,
             color: 'text-blue-600',
-            bg: 'bg-blue-50',
-            trend: '4 tasks in review',
-            trendColor: 'text-blue-500'
+            bg: 'bg-blue-50/50',
+            borderColor: 'group-hover:border-blue-200'
         },
         {
-            label: 'Critical Load',
+            label: 'Critical',
             value: highPriorityTasks.toString(),
+            detail: 'High priority',
             icon: AlertCircle,
             color: 'text-rose-600',
-            bg: 'bg-rose-50',
-            trend: highPriorityTasks > 3 ? 'Immediate attention' : 'Managed load',
-            trendColor: highPriorityTasks > 3 ? 'text-rose-500' : 'text-slate-400'
+            bg: 'bg-rose-50/50',
+            borderColor: 'group-hover:border-rose-200'
+        },
+        {
+            label: 'Pending Review',
+            value: submittedTasks.toString(),
+            detail: 'Needs approval',
+            icon: Zap,
+            color: 'text-amber-600',
+            bg: 'bg-amber-50/50',
+            borderColor: 'group-hover:border-amber-200'
+        },
+        {
+            label: 'Revisions',
+            value: rejectedTasks.toString(),
+            detail: 'Needs rework',
+            icon: Clock,
+            color: 'text-orange-600',
+            bg: 'bg-orange-50/50',
+            borderColor: 'group-hover:border-orange-200'
         }
     ];
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+        <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8"
+        >
             {stats.map((stat, idx) => (
-                <div
+                <motion.div
                     key={idx}
-                    className="bg-white p-3.5 md:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group"
+                    variants={itemVariants}
+                    whileHover={{ y: -2 }}
+                    className={`group relative bg-white p-4 border border-slate-100 shadow-sm transition-all duration-300 ${stat.borderColor}`}
                 >
-                    <div className="flex items-start justify-between mb-3 md:mb-4">
-                        <div className={`p-2 md:p-2.5 ${stat.bg} ${stat.color} transition-colors group-hover:scale-110 duration-300`}>
-                            <stat.icon size={18} className="md:w-[22px] md:h-[22px]" />
+                    <div className="flex items-center gap-3 mb-2.5">
+                        <div className={`p-1.5 rounded-lg ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                            <stat.icon size={16} />
                         </div>
-                        <div className="hidden md:flex items-center gap-1 text-slate-400">
-                            <TrendingUp size={14} />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Metrics</span>
-                        </div>
+                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                            {stat.label}
+                        </h3>
                     </div>
 
-                    <div className="space-y-0.5 md:space-y-1">
-                        <h3 className="text-xs md:text-sm font-medium text-slate-500 leading-tight">{stat.label}</h3>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+                    <div className="flex items-end justify-between">
+                        <div>
+                            <div className="text-xl font-bold text-slate-900 tracking-tight leading-none mb-1">
                                 {stat.value}
-                            </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium whitespace-nowrap">
+                                {stat.detail}
+                            </div>
                         </div>
+                        <ArrowUpRight size={14} className="text-slate-300 group-hover:text-slate-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                     </div>
 
-                    <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-slate-50 flex items-center gap-2">
-                        <span className={`text-[10px] md:text-[11px] font-medium leading-tight ${stat.trendColor}`}>
-                            {stat.trend}
-                        </span>
-                    </div>
-                </div>
+                    {/* Subtle bottom accent line */}
+                    <div className={`absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ${stat.color.replace('text', 'bg')}`} />
+                </motion.div>
             ))}
-        </div>
+        </motion.div>
     );
 };

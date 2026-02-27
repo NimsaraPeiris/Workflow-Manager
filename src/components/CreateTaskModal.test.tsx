@@ -31,7 +31,7 @@ describe('CreateTaskModal', () => {
         newTask: mockNewTask,
         setNewTask: vi.fn(),
         departments: [{ id: 'dept-1', name: 'Design' }],
-        employees: [{ id: 'emp-1', full_name: 'Dilusha', departments: { name: 'Design' } }],
+        employees: [{ id: 'emp-1', full_name: 'John Doe', departments: { name: 'Design' } }],
         currentUser: { id: 'user-1', user_metadata: { role: 'HEAD', department_id: 'dept-1' } }
     };
 

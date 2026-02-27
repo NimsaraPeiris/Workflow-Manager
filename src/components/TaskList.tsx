@@ -7,9 +7,10 @@ interface TaskListProps {
     loading: boolean;
     searchQuery: string;
     onTaskClick: (taskId: string) => void;
+    variant?: 'default' | 'brief';
 }
 
-export const TaskList = ({ tasks, loading, searchQuery, onTaskClick }: TaskListProps) => {
+export const TaskList = ({ tasks, loading, searchQuery, onTaskClick, variant = 'default' }: TaskListProps) => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-100 shadow-sm transition-all">
@@ -37,6 +38,7 @@ export const TaskList = ({ tasks, loading, searchQuery, onTaskClick }: TaskListP
                     key={task.id}
                     task={task}
                     onClick={onTaskClick}
+                    variant={variant}
                 />
             ))}
         </div>

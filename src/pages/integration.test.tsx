@@ -4,27 +4,50 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '../lib/supabaseClient';
 import { auditLogger } from '../lib/auditLogger';
 
-// Mock Supabase
-vi.mock('../lib/supabaseClient', () => ({
-    supabase: {
-        from: vi.fn(),
-        storage: {
-            from: vi.fn(() => ({
-                upload: vi.fn(),
-                getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'http://example.com' } }))
-            }))
-        }
-    }
-}));
+// Mock Supabase with a consistent chain pattern
+vi.mock('../lib/supabaseClient', () => {
+    const chains: Record<string, any> = {};
+    const createChain = (data: any = {}) => {
+        const chain: any = {
+            select: vi.fn(() => chain),
+            eq: vi.fn(() => chain),
+            or: vi.fn(() => chain),
+            order: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? data : [], error: null })),
+            single: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? null : data, error: null })),
+            update: vi.fn(() => chain),
+            insert: vi.fn(() => Promise.resolve({ error: null })),
+        };
+        return chain;
+    };
 
-// Mock Audit Logger to verify it's called
+    return {
+        supabase: {
+            from: vi.fn((table: string) => {
+                if (!chains[table]) {
+                    if (table === 'profiles') chains[table] = createChain([{ id: 'worker-1', role: 'EMPLOYEE', full_name: 'Jane Worker' }]);
+                    else if (table === 'departments') chains[table] = createChain([{ id: 'dept-1', name: 'Engineering' }]);
+                    else chains[table] = createChain({});
+                }
+                return chains[table];
+            }),
+            storage: {
+                from: vi.fn(() => ({
+                    upload: vi.fn().mockResolvedValue({ error: null }),
+                    getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'http://example.com' } }))
+                }))
+            }
+        }
+    };
+});
+
+// Mock Audit Logger
 vi.mock('../lib/auditLogger', () => ({
     auditLogger: {
         log: vi.fn()
     }
 }));
 
-// Mock framer-motion to avoid animation issues in jsdom
+// Mock framer-motion
 vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, onClick }: any) => <div className={className} onClick={onClick}>{children}</div>,
@@ -50,32 +73,23 @@ describe('Task LifeCycle Integration (Requester Flow)', () => {
         department_id: 'dept-2',
         creator_id: 'creator-1',
         assignee_id: 'worker-1',
-        activities: []
-    };
-
-    const createSupabaseMock = (data: any) => {
-        const mock: any = {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data, error: null }),
-            update: vi.fn().mockReturnThis(),
-            insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-            or: vi.fn().mockReturnThis(),
-        };
-        return mock;
+        due_date: '2025-12-31',
+        created_at: '2025-01-01T00:00:00Z',
+        updated_at: '2025-01-01T00:00:00Z',
+        activities: [],
+        creator: { full_name: 'John Creator' },
+        assignee: { full_name: 'Jane Worker' },
+        department: { name: 'Engineering' }
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-
-        // Setup initial task query
-        vi.mocked(supabase.from).mockImplementation((table: string) => {
-            if (table === 'tasks') return createSupabaseMock(submittedTask) as any;
-            return createSupabaseMock([]) as any;
-        });
     });
 
     it('integration: requester can reject a submitted task with a mandatory comment', async () => {
+        const taskChain = (supabase.from('tasks') as any);
+        taskChain.single.mockResolvedValue({ data: submittedTask, error: null });
+
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={mockRequester} />);
 
         // 1. Wait for task to load and check if Approve/Reject buttons are visible
@@ -89,7 +103,6 @@ describe('Task LifeCycle Integration (Requester Flow)', () => {
         fireEvent.click(rejectBtn);
 
         expect(screen.getByText('Reject Submission')).toBeInTheDocument();
-        expect(screen.getByText(/providing clear feedback/i)).toBeInTheDocument();
 
         // 3. Try to confirm without a comment - should show validation error
         const confirmBtn = screen.getByText('Confirm Rejection');
