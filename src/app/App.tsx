@@ -137,6 +137,8 @@ export default function App() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
+        setShowLogoutConfirm(false);
+        setIsSidebarOpen(false);
         setUser(null);
         setAuthView('login');
         setSelectedTaskId(null);
