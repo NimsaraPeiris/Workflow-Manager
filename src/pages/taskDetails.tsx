@@ -424,7 +424,15 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     <TaskMainContent
                         task={task}
                         getBadgeVariant={getBadgeVariant}
-                        canEdit={currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN'}
+                        canEdit={
+                            currentUser.id === task.creator_id ||
+                            currentUser.user_metadata?.role === 'SUPER_ADMIN' ||
+                            (isHead &&
+                                !!task.due_date &&
+                                new Date(task.due_date) < new Date() &&
+                                !['APPROVED', 'CANCELLED'].includes(task.status) &&
+                                task.department_id === currentUser.user_metadata?.department_id)
+                        }
                         onDateUpdate={handleDateUpdate}
                     />
 
