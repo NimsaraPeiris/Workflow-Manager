@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { LogOut, User as UserIcon, Menu, Mail, Shield, ChevronDown } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, Mail, Shield, ChevronDown, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../lib/ThemeContext';
 
 interface HeaderProps {
     user: any;
@@ -10,9 +11,10 @@ interface HeaderProps {
 
 export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps) {
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     return (
-        <nav className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+        <nav className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-6 py-3 flex justify-between items-center sticky top-0 z-50 transition-colors">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onToggleSidebar}
@@ -21,23 +23,31 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                     <Menu size={20} />
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gray-900 flex items-center justify-center text-white">
+                    <div className="w-8 h-8 bg-gray-900 dark:bg-orange-600 flex items-center justify-center text-white">
                         <span className="text-xs font-bold"></span>
                     </div>
-                    <span className="font-semibold text-base hidden sm:inline-block">Workflow <span className="text-orange-600">Manager</span></span>
+                    <span className="font-semibold text-base hidden sm:inline-block dark:text-white">Workflow <span className="text-orange-600">Manager</span></span>
                 </div>
             </div>
 
             <div className="flex items-center gap-4 relative">
+                <button
+                    onClick={toggleTheme}
+                    className="p-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all"
+                    title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                >
+                    {theme === 'light' ? <Moon size={18} /> : <Sun size={18} className="text-yellow-400" />}
+                </button>
+
                 <div
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 border border-gray-200 cursor-pointer lg:cursor-default"
+                    className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-700 cursor-pointer lg:cursor-default"
                 >
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-gray-900 leading-tight">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
                             {user.user_metadata?.email}
                         </p>
-                        <p className="text-[11px] text-gray-500 uppercase tracking-wider">
+                        <p className="text-[11px] text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                             {user.user_metadata?.role === 'HEAD' ? 'Head' : 'Employee'} • {user.user_metadata?.full_name || 'General'}
                         </p>
                     </div>
@@ -96,11 +106,11 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                     )}
                 </AnimatePresence>
 
-                <div className="h-8 w-[1px] bg-gray-200 mx-1 hidden sm:block"></div>
+                <div className="h-8 w-[1px] bg-gray-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
 
                 <button
                     onClick={onLogout}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all hidden sm:block"
+                    className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all hidden sm:block"
                     title="Logout"
                 >
                     <LogOut size={18} />

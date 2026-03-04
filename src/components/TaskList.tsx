@@ -13,18 +13,18 @@ interface TaskListProps {
 export const TaskList = ({ tasks, loading, searchQuery, onTaskClick, variant = 'default' }: TaskListProps) => {
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-100 shadow-sm transition-all">
+            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm transition-all rounded-xl">
                 <Loader2 className="text-orange-500 animate-spin mb-4" size={40} />
-                <p className="text-slate-400">Fetching tasks...</p>
+                <p className="text-slate-400 dark:text-slate-500 font-medium">Fetching tasks...</p>
             </div>
         );
     }
 
     if (tasks.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-100 shadow-sm transition-all text-center px-6">
-                <h3 className="text-xl text-slate-900 mb-2">No tasks found</h3>
-                <p className="text-slate-500 max-w-sm">
+            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm transition-all text-center px-6 rounded-xl">
+                <h3 className="text-xl text-slate-900 dark:text-white font-bold mb-2">No tasks found</h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-sm font-medium">
                     {searchQuery ? "We couldn't find any tasks matching your search." : "Get started by creating your first task to track progress."}
                 </p>
             </div>

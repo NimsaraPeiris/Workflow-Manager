@@ -25,26 +25,26 @@ export const TaskActivityTimeline = ({
     };
 
     return (
-        <div className="bg-white border border-slate-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 rounded-2xl transition-colors">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
-                    <History className="text-orange-600" size={20} />
-                    <h3 className="text-lg font-medium text-slate-900">Activity Timeline</h3>
+                    <History className="text-orange-600 dark:text-orange-500" size={20} />
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Activity Timeline</h3>
                 </div>
-                <label className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 text-slate-600 text-xs font-bold cursor-pointer hover:bg-slate-100 transition-all uppercase tracking-widest">
+                <label className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-black cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all uppercase tracking-widest rounded-lg">
                     <Paperclip size={14} />
                     {uploading ? 'Uploading...' : 'Attach File'}
                     <input type="file" className="hidden" onChange={onFileUpload} disabled={uploading} />
                 </label>
             </div>
 
-            <div className="space-y-8 relative before:absolute before:inset-0 before:ml-[19px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-slate-100 before:via-slate-100 before:to-transparent">
+            <div className="space-y-8 relative before:absolute before:inset-0 before:ml-[19px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-slate-100 dark:before:from-slate-800 before:via-slate-100 dark:before:via-slate-800 before:to-transparent">
                 {activities && activities.length > 0 ? (
                     [...activities].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((act: any) => (
                         <div key={act.id} className="relative flex gap-6 group">
-                            <div className={`mt-1 h-10 w-10 rounded-full flex items-center justify-center shrink-0 z-10 transition-all shadow-sm ${act.activity_type === 'COMMENT' ? 'bg-white border-2 border-orange-500 text-orange-500' :
-                                act.activity_type === 'ATTACHMENT' ? 'bg-white border-2 border-blue-500 text-blue-500' :
-                                    'bg-white border-2 border-slate-300 text-slate-400'
+                            <div className={`mt-1 h-10 w-10 rounded-full flex items-center justify-center shrink-0 z-10 transition-all shadow-sm ${act.activity_type === 'COMMENT' ? 'bg-white dark:bg-slate-900 border-2 border-orange-500 text-orange-500' :
+                                act.activity_type === 'ATTACHMENT' ? 'bg-white dark:bg-slate-900 border-2 border-blue-500 text-blue-500' :
+                                    'bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-600'
                                 }`}>
                                 {act.activity_type === 'COMMENT' ? <MessageSquare size={16} /> :
                                     act.activity_type === 'ATTACHMENT' ? <Paperclip size={16} /> :
@@ -53,36 +53,36 @@ export const TaskActivityTimeline = ({
 
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-4 mb-2">
-                                    <p className="text-sm font-bold text-slate-900 truncate">{act.profile?.full_name || 'System'}</p>
-                                    <time className="text-[10px] text-slate-400 uppercase tracking-widest font-bold whitespace-nowrap">
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{act.profile?.full_name || 'System'}</p>
+                                    <time className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black whitespace-nowrap">
                                         {new Date(act.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                                     </time>
                                 </div>
-                                <div className={`p-4 border ${act.activity_type === 'COMMENT' ? 'bg-slate-50 border-slate-100 text-slate-700' :
-                                    act.activity_type === 'ATTACHMENT' ? 'bg-blue-50/30 border-blue-100 text-blue-900' :
-                                        'bg-white border-transparent text-slate-500 italic text-sm'
+                                <div className={`p-4 border rounded-xl transition-colors ${act.activity_type === 'COMMENT' ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300' :
+                                    act.activity_type === 'ATTACHMENT' ? 'bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30 text-blue-900 dark:text-blue-200' :
+                                        'bg-white dark:bg-slate-950/20 border-transparent text-slate-500 dark:text-slate-400 italic text-sm'
                                     }`}>
                                     {act.activity_type === 'ATTACHMENT' ? (
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white border border-blue-200 text-blue-500"><FileText size={20} /></div>
+                                            <div className="p-2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-900 text-blue-500 rounded-lg"><FileText size={20} /></div>
                                             <div className="flex-1 truncate">
-                                                <p className="text-sm font-medium truncate">{act.file_name}</p>
-                                                <a href={act.file_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1 uppercase tracking-tighter mt-1">
+                                                <p className="text-sm font-bold dark:text-slate-200 truncate">{act.file_name}</p>
+                                                <a href={act.file_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-black hover:underline flex items-center gap-1 uppercase tracking-tighter mt-1">
                                                     <Download size={10} /> Download File
                                                 </a>
                                             </div>
                                         </div>
-                                    ) : <p className="text-sm leading-relaxed">{act.content}</p>}
+                                    ) : <p className="text-sm leading-relaxed font-medium">{act.content}</p>}
                                 </div>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-12 text-sm text-slate-400 italic">No activity recorded yet.</div>
+                    <div className="text-center py-12 text-sm text-slate-400 dark:text-slate-600 italic">No activity recorded yet.</div>
                 )}
             </div>
 
-            <div className="mt-12 relative">
+            <div className="mt-12 relative flex items-center gap-2">
                 <Input
                     placeholder="Write a comment..."
                     value={comment}
@@ -92,13 +92,13 @@ export const TaskActivityTimeline = ({
                             handleSend();
                         }
                     }}
-                    className="pr-14 mt-1"
+                    className="flex-1 bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 dark:text-white"
                 />
                 <button
                     onClick={handleSend}
-                    className="absolute right-4 top-1/2 -translate-y-1/3 text-orange-600 hover:scale-110 transition-transform cursor-pointer"
+                    className="p-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-all active:scale-90 shadow-md shadow-orange-200 dark:shadow-none"
                 >
-                    <Send size={22} />
+                    <Send size={20} />
                 </button>
             </div>
         </div>

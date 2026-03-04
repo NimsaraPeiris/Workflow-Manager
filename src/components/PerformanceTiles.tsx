@@ -114,27 +114,27 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
                     key={idx}
                     variants={itemVariants}
                     whileHover={{ y: -2 }}
-                    className={`group relative bg-white p-4 border border-slate-100 shadow-sm transition-all duration-300 ${stat.borderColor}`}
+                    className={`group relative bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800 shadow-sm transition-all duration-300 ${stat.borderColor} dark:hover:border-slate-700 rounded-xl overflow-hidden`}
                 >
                     <div className="flex items-center gap-3 mb-2.5">
-                        <div className={`p-1.5 rounded-lg ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                        <div className={`p-1.5 rounded-lg ${stat.bg} dark:bg-slate-800/50 ${stat.color} dark:text-orange-500 group-hover:scale-110 transition-transform duration-300`}>
                             <stat.icon size={16} />
                         </div>
-                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                        <h3 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
                             {stat.label}
                         </h3>
                     </div>
 
                     <div className="flex items-end justify-between">
                         <div>
-                            <div className="text-xl font-bold text-slate-900 tracking-tight leading-none mb-1">
+                            <div className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none mb-1">
                                 {stat.value}
                             </div>
-                            <div className="text-[10px] text-slate-500 font-medium whitespace-nowrap">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                                 {stat.detail}
                             </div>
                         </div>
-                        <ArrowUpRight size={14} className="text-slate-300 group-hover:text-slate-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        <ArrowUpRight size={14} className="text-slate-300 dark:text-slate-700 group-hover:text-slate-400 dark:group-hover:text-slate-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                     </div>
 
                     {/* Subtle bottom accent line */}

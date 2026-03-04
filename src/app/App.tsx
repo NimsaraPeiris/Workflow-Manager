@@ -10,8 +10,17 @@ import { supabase } from '../lib/supabaseClient';
 
 import { Sidebar } from '../components/Sidebar';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
+import { ThemeProvider } from '../lib/ThemeContext';
 
 export default function App() {
+    return (
+        <ThemeProvider>
+            <AppContent />
+        </ThemeProvider>
+    );
+}
+
+function AppContent() {
     const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [authView, setAuthView] = useState<'login' | 'register'>('login');
@@ -147,10 +156,10 @@ export default function App() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-pulse flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200"></div>
-                    <div className="h-3 w-20 bg-gray-200"></div>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors">
+                <div className="animate-pulse flex flex-col items-center gap-6">
+                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl rotate-45 shadow-2xl"></div>
+                    <div className="h-2 w-32 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
                 </div>
             </div>
         );
@@ -171,7 +180,7 @@ export default function App() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-900">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-orange-500/20">
             <Header
                 user={user}
                 onLogout={() => setShowLogoutConfirm(true)}
@@ -203,8 +212,8 @@ export default function App() {
                 }}
             />
 
-            <main className="lg:ml-72 pt-16 min-h-screen">
-                <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
+            <main className="lg:ml-72 pt-20 min-h-screen overflow-x-hidden">
+                <div className="max-w-7xl mx-auto py-8 px-4 sm:px-8 lg:px-12">
                     {currentView === 'users' ? (
                         <UserManagementPage currentUser={user} />
                     ) : currentView === 'audit' ? (

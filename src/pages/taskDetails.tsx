@@ -16,6 +16,7 @@ import { TaskActionsSidebar } from '../components/task-details/TaskActionsSideba
 import { AssignEmployeeModal } from '../components/task-details/AssignEmployeeModal';
 import { DecisionModal } from '../components/task-details/DecisionModal';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
+import { SubTaskSection } from '../components/task-details/SubTaskSection';
 
 interface TaskDetailsPageProps {
     taskId: string;
@@ -71,6 +72,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     creator:profiles!tasks_creator_id_fkey(full_name),
                     assignee:profiles!tasks_assignee_id_fkey(full_name),
                     department:departments(name),
+                    sub_tasks(*),
                     activities:task_activities(
                         *,
                         profile:profiles(full_name)
@@ -394,11 +396,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
     if (error || !task) {
         return (
-            <div className="bg-white border border-slate-200 p-8 text-center">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center rounded-2xl shadow-xl transition-colors">
                 <AlertCircle className="mx-auto text-rose-500 mb-4" size={40} />
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Task</h2>
-                <p className="text-slate-500 mb-6">{typeof error === 'string' ? error : 'Task not found'}</p>
-                <Button onClick={onBack}>Return to Dashboard</Button>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Error Loading Task</h2>
+                <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">{typeof error === 'string' ? error : 'Task not found'}</p>
+                <div className="flex justify-center">
+                    <Button onClick={onBack} variant="secondary">Return to Dashboard</Button>
+                </div>
             </div>
         );
     }
@@ -409,13 +413,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
         >
-            <div className="flex items-center gap-4 mb-2">
-                <button onClick={onBack} className="p-2 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all text-slate-500">
+            <div className="flex items-center gap-4 mb-2 group">
+                <button onClick={onBack} className="p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all text-slate-500 dark:text-slate-400">
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h2 className="text-2xl text-slate-900 tracking-tight">Task Details</h2>
-                    <p className="text-sm text-slate-500">Overview of the project progress and updates</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">Task Details</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">Overview of the project progress and updates</p>
                 </div>
             </div>
 
@@ -434,6 +438,34 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                                 task.department_id === currentUser.user_metadata?.department_id)
                         }
                         onDateUpdate={handleDateUpdate}
+                    />
+
+                    <SubTaskSection
+                        subTasks={task.sub_tasks || []}
+                        onToggle={async (id: string, isCompleted: boolean) => {
+                            const { error } = await supabase
+                                .from('sub_tasks')
+                                .update({ is_completed: isCompleted, updated_at: new Date().toISOString() })
+                                .eq('id', id);
+                            if (!error) fetchTaskDetails();
+                        }}
+                        onCreate={async (title: string, subDueDate?: string) => {
+                            const { error } = await supabase
+                                .from('sub_tasks')
+                                .insert([{
+                                    task_id: taskId,
+                                    title,
+                                    due_date: subDueDate || null
+                                }]);
+                            if (!error) fetchTaskDetails();
+                        }}
+                        onDelete={async (id: string) => {
+                            const { error } = await supabase
+                                .from('sub_tasks')
+                                .delete()
+                                .eq('id', id);
+                            if (!error) fetchTaskDetails();
+                        }}
                     />
 
                     <TaskActivityTimeline

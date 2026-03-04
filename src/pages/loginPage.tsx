@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { authBridge } from '../lib/authBridge';
 
 import { auditLogger } from '../lib/auditLogger';
 
@@ -107,7 +108,39 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
                                 "Sign In"
                             )}
                         </button>
+
+                        <div className="relative py-4">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-200"></div>
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-white px-2 text-gray-500">Or continue with SSO</span>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const token = prompt("Enter your SSO JWT for testing:");
+                                if (token) {
+                                    setLoading(true);
+                                    try {
+                                        await authBridge.signInWithExternalToken(token);
+                                        const { data: { user } } = await supabase.auth.getUser();
+                                        if (user) onLogin(user);
+                                    } catch (err) {
+                                        setError(err.message);
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }
+                            }}
+                            className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 transition-all flex items-center justify-center gap-2 text-sm"
+                        >
+                            Log in with Microsoft / SSO
+                        </button>
                     </form>
+
 
                     <div className="mt-6 text-center">
                         <p className="text-gray-500 text-sm">

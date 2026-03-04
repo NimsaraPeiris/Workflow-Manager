@@ -62,6 +62,17 @@ export interface Task {
     assignee?: { full_name: string };
     department?: { name: string };
     comments?: any[];
+    sub_tasks?: SubTask[];
+}
+
+export interface SubTask {
+    id: string;
+    task_id: string;
+    title: string;
+    is_completed: boolean;
+    due_date?: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Comment {
