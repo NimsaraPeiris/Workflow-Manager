@@ -45,14 +45,14 @@ export const TaskHeader = ({
                         placeholder="Search tasks..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none w-full md:w-48 transition-all text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm"
+                        className="pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none w-full md:w-48 transition-all text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm"
                     />
                 </div>
 
                 <select
                     value={filterDeptId || ''}
                     onChange={(e) => onDeptSelect?.(e.target.value || null)}
-                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-lg outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm font-medium min-w-[140px] dark:text-slate-300"
+                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm font-medium min-w-[140px] dark:text-slate-300"
                 >
                     <option value="">All Departments</option>
                     {departments.map((dept) => (
@@ -63,7 +63,7 @@ export const TaskHeader = ({
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter?.(e.target.value)}
-                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-lg outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm font-medium dark:text-slate-300"
+                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm font-medium dark:text-slate-300"
                 >
                     <option value="ALL">All Statuses</option>
                     <option value="CREATED">Created</option>

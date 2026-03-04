@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { UserPlus, FolderPlus, Search, Loader2 } from 'lucide-react';
+import { UserPlus, FolderPlus, Search, Loader2, ShieldCheck } from 'lucide-react';
 import { auditLogger } from '../../lib/auditLogger';
 import {
     AdminStats,
     DepartmentCard,
     CreateDeptModal,
-    CreateUserModal
+    CreateUserModal,
+    RoleManagementModal
 } from '../../components/admin';
+
 
 import type { User, Department } from '../../types';
 
@@ -22,6 +24,9 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
     const [searchQuery, setSearchQuery] = useState('');
     const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+    const [roles, setRoles] = useState<any[]>([]);
+
 
     const [newDeptName, setNewDeptName] = useState('');
     const [deptLoading, setDeptLoading] = useState(false);
@@ -32,13 +37,24 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         fullName: '',
         password: '',
         departmentId: '',
-        role: 'EMPLOYEE'
+        role: 'EMPLOYEE',
+        roleId: '',
+        permissions: [] as string[]
     });
+
+
     const [userLoading, setUserLoading] = useState(false);
 
     useEffect(() => {
         fetchData();
+        fetchRoles();
     }, []);
+
+    const fetchRoles = async () => {
+        const { data } = await supabase.from('roles').select('*');
+        if (data) setRoles(data);
+    };
+
 
     const fetchData = async () => {
         setLoading(true);
@@ -95,7 +111,9 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                     data: {
                         full_name: newUser.fullName,
                         department_id: newUser.departmentId,
-                        role: newUser.role
+                        role: newUser.role,
+                        role_id: newUser.roleId,
+                        permissions: newUser.permissions
                     }
                 }
             });
@@ -111,13 +129,16 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                         email: newUser.email,
                         full_name: newUser.fullName,
                         role: newUser.role,
-                        department_id: newUser.departmentId
+                        role_id: newUser.roleId,
+                        department_id: newUser.departmentId,
+                        permissions: newUser.permissions
                     }
                 });
             }
 
             setIsUserModalOpen(false);
-            setNewUser({ email: '', fullName: '', password: '', departmentId: '', role: 'EMPLOYEE' });
+            setNewUser({ email: '', fullName: '', password: '', departmentId: '', role: 'EMPLOYEE', roleId: '', permissions: [] });
+
             fetchData();
             alert('User created successfully!');
         } catch (err: any) {
@@ -142,23 +163,30 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Organization Management</h1>
-                    <p className="text-slate-500 mt-1">Manage departments, users, and hierarchy across the platform.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Organization Management</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage departments, users, and hierarchy across the platform.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => setIsDeptModalOpen(true)}
-                        className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 transition-all shadow-sm"
+                        onClick={() => setIsRoleModalOpen(true)}
+                        className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-5 py-2.5 transition-all shadow-sm rounded-none"
                     >
-                        <FolderPlus size={18} />
-                        <span className="font-medium text-sm">New Dept</span>
+                        <ShieldCheck size={18} className="text-orange-600" />
+                        <span className="font-bold text-sm">Manage Roles</span>
+                    </button>
+                    <button
+                        onClick={() => setIsDeptModalOpen(true)}
+                        className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-5 py-2.5 transition-all shadow-sm rounded-none"
+                    >
+                        <FolderPlus size={18} className="text-blue-600" />
+                        <span className="font-bold text-sm">New Dept</span>
                     </button>
                     <button
                         onClick={() => setIsUserModalOpen(true)}
-                        className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 transition-all shadow-lg shadow-orange-200"
+                        className="flex items-center gap-2 bg-slate-900 dark:bg-orange-600 hover:bg-slate-800 dark:hover:bg-orange-700 text-white px-5 py-2.5 transition-all shadow-lg shadow-slate-200 dark:shadow-none rounded-none"
                     >
                         <UserPlus size={18} />
-                        <span className="font-medium text-sm">Add User / Head</span>
+                        <span className="font-bold text-sm">Add Staff</span>
                     </button>
                 </div>
             </div>
@@ -178,18 +206,18 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                     placeholder="Search by department or user name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm rounded-xl"
+                    className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white outline-none transition-all shadow-sm rounded-none"
                 />
             </div>
 
             {/* Departments Grid */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-100">
+                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800">
                     <Loader2 className="animate-spin text-orange-500 mb-4" size={40} />
                     <p className="text-slate-400 font-medium">Loading organization data...</p>
                 </div>
             ) : filteredDepts.length === 0 ? (
-                <div className="text-center py-20 bg-white border border-slate-100 uppercase tracking-widest text-slate-400">
+                <div className="text-center py-20 bg-white dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 uppercase tracking-widest text-slate-400">
                     No matching departments found
                 </div>
             ) : (
@@ -217,9 +245,22 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                 newUser={newUser}
                 setNewUser={setNewUser}
                 departments={departments}
+                roles={roles}
                 loading={userLoading}
+
                 error={error}
             />
+
+            <RoleManagementModal
+                isOpen={isRoleModalOpen}
+                onClose={() => setIsRoleModalOpen(false)}
+                onSave={async (roleData) => {
+                    const { error } = await supabase.from('roles').insert([roleData]);
+                    if (!error) fetchRoles();
+                }}
+                existingRoles={roles}
+            />
+
         </div>
     );
 }

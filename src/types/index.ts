@@ -11,7 +11,9 @@ export interface User {
     full_name: string;
     role: string;
     department_id: string;
+    permissions?: string[];
 }
+
 
 export interface Department {
     id: string;

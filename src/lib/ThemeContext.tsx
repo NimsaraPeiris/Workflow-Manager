@@ -21,17 +21,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const root = window.document.documentElement;
+        console.log('Theme changed to:', theme);
         if (theme === 'dark') {
             root.classList.add('dark');
+            root.style.colorScheme = 'dark';
         } else {
             root.classList.remove('dark');
+            root.style.colorScheme = 'light';
         }
         localStorage.setItem('theme', theme);
     }, [theme]);
 
     const toggleTheme = () => {
+        console.log('Toggling theme from:', theme);
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
     };
+
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>

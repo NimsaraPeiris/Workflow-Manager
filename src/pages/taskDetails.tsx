@@ -396,7 +396,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
     if (error || !task) {
         return (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center rounded-2xl shadow-xl transition-colors">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center rounded-none shadow-xl transition-colors">
                 <AlertCircle className="mx-auto text-rose-500 mb-4" size={40} />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Error Loading Task</h2>
                 <p className="text-slate-500 dark:text-slate-400 mb-6 font-medium">{typeof error === 'string' ? error : 'Task not found'}</p>
@@ -414,7 +414,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             className="space-y-6"
         >
             <div className="flex items-center gap-4 mb-2 group">
-                <button onClick={onBack} className="p-2.5 rounded-xl hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all text-slate-500 dark:text-slate-400">
+                <button onClick={onBack} className="p-2.5 rounded-none hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-all text-slate-500 dark:text-slate-400">
                     <ArrowLeft size={20} />
                 </button>
                 <div>

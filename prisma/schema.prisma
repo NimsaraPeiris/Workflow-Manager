@@ -13,6 +13,9 @@ model Profile {
   full_name      String?
   department_id  String?        @db.Uuid
   role           user_role?     @default(USER)
+  role_id        String?        @db.Uuid
+  role_ref       Role?          @relation(fields: [role_id], references: [id])
+  permissions    Json           @default("[]")
   updated_at     DateTime?      @default(now()) @db.Timestamptz(6)
   comments       Comment[]
   department     Department?    @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -23,6 +26,17 @@ model Profile {
   auditLogs      AuditLog[]
 
   @@map("profiles")
+  @@schema("public")
+}
+
+model Role {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String    @unique
+  permissions Json      @default("[]")
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  profiles    Profile[]
+
+  @@map("roles")
   @@schema("public")
 }
 

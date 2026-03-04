@@ -114,10 +114,10 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
                     key={idx}
                     variants={itemVariants}
                     whileHover={{ y: -2 }}
-                    className={`group relative bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800 shadow-sm transition-all duration-300 ${stat.borderColor} dark:hover:border-slate-700 rounded-xl overflow-hidden`}
+                    className={`group relative bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800 shadow-sm transition-all duration-300 ${stat.borderColor} dark:hover:border-slate-700 rounded-none overflow-hidden`}
                 >
                     <div className="flex items-center gap-3 mb-2.5">
-                        <div className={`p-1.5 rounded-lg ${stat.bg} dark:bg-slate-800/50 ${stat.color} dark:text-orange-500 group-hover:scale-110 transition-transform duration-300`}>
+                        <div className={`p-1.5 rounded-none ${stat.bg} dark:bg-slate-800/50 ${stat.color} dark:text-orange-500 group-hover:scale-110 transition-transform duration-300`}>
                             <stat.icon size={16} />
                         </div>
                         <h3 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">

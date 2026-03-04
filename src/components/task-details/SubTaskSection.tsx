@@ -34,7 +34,7 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
     const progress = subTasks.length > 0 ? (completedCount / subTasks.length) * 100 : 0;
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-6 rounded-2xl transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 space-y-6 rounded-none transition-colors">
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Sub-Tasks</h3>
@@ -54,11 +54,11 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
             </div>
 
             {/* Progress Bar */}
-            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-none overflow-hidden p-0.5">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
-                    className={`h-full rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-orange-500'} shadow-sm`}
+                    className={`h-full rounded ${progress === 100 ? 'bg-green-400' : 'bg-orange-500'} shadow-sm`}
                 />
             </div>
 
@@ -70,7 +70,7 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className={`flex items-center gap-4 p-4 border rounded-2xl transition-all ${st.is_completed ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}
+                            className={`flex items-center gap-4 p-4 border rounded-none transition-all ${st.is_completed ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}
                         >
                             <button
                                 onClick={() => {
@@ -78,7 +78,7 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
                                     onToggle(st.id, !st.is_completed).finally(() => setToggling(null));
                                 }}
                                 disabled={toggling === st.id}
-                                className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${st.is_completed ? 'bg-orange-600 border-orange-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-500'}`}
+                                className={`w-6 h-6 rounded-none border flex items-center justify-center transition-all ${st.is_completed ? 'bg-orange-600 border-orange-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-500'}`}
                             >
                                 {toggling === st.id ? (
                                     <Loader2 className="animate-spin" size={12} />
@@ -103,7 +103,7 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
 
                             <button
                                 onClick={() => onDelete(st.id)}
-                                className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
+                                className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-none transition-all active:scale-90"
                             >
                                 <Trash2 size={16} />
                             </button>
@@ -112,7 +112,7 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
                 </AnimatePresence>
 
                 {subTasks.length === 0 && (
-                    <div className="py-10 text-center bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 transition-colors">
+                    <div className="py-10 text-center bg-slate-50 dark:bg-slate-900/40 rounded-none border border-dashed border-slate-200 dark:border-slate-800 transition-colors">
                         <p className="text-sm text-slate-500 dark:text-slate-600 font-medium">No sub-tasks yet. Break down your work!</p>
                     </div>
                 )}
@@ -125,7 +125,7 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
                         placeholder="New sub-task..."
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
                     />
                 </div>
                 <div className="md:col-span-6 lg:col-span-3">
@@ -133,14 +133,14 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
                         type="date"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-sm dark:text-white focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
                     />
                 </div>
                 <div className="md:col-span-6 lg:col-span-2">
                     <button
                         type="submit"
                         disabled={submitting || !newTitle}
-                        className="w-full h-full min-h-[46px] bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:bg-slate-300 dark:disabled:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 dark:shadow-none active:scale-95 font-bold"
+                        className="w-full h-full min-h-[46px] bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-none flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:bg-slate-300 dark:disabled:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 dark:shadow-none active:scale-95 font-bold"
                     >
                         {submitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
                     </button>

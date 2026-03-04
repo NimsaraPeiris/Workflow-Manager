@@ -24,11 +24,11 @@ export const TaskActionsSidebar = ({
     cancellationRequester
 }: TaskActionsSidebarProps) => {
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl p-8 space-y-8 rounded-2xl transition-all">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl p-8 space-y-8 rounded-none transition-all">
             <div className="group">
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 font-black">Assignee</p>
-                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl transition-all group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-500 flex items-center justify-center rounded-xl shadow-inner transition-colors"><UserIcon size={24} /></div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-none transition-all group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-500 flex items-center justify-center rounded-none shadow-inner transition-colors"><UserIcon size={24} /></div>
                     <div className="min-w-0">
                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{(task as any).assignee?.full_name || 'Unassigned'}</p>
                         <p className="text-[10px] text-slate-500 dark:text-slate-600 font-bold uppercase tracking-tighter mt-0.5">Wait for supervisor</p>
@@ -38,8 +38,8 @@ export const TaskActionsSidebar = ({
 
             <div className="group">
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 font-black">Department</p>
-                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl transition-all group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
-                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-500 flex items-center justify-center rounded-xl shadow-inner transition-colors"><Tag size={20} /></div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-none transition-all group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
+                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-500 flex items-center justify-center rounded-none shadow-inner transition-colors"><Tag size={20} /></div>
                     <div className="min-w-0">
                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{(task as any).department?.name || 'General'}</p>
                         <p className="text-[10px] text-slate-500 dark:text-slate-600 font-bold uppercase tracking-tighter mt-0.5">Target department</p>
@@ -67,7 +67,7 @@ export const TaskActionsSidebar = ({
                     </div>
                 )}
                 {(currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN') && task.status === 'CANCEL_REQUESTED' && (
-                    <div className="space-y-3 p-5 bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm transition-colors">
+                    <div className="space-y-3 p-5 bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-none animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm transition-colors">
                         <div className="space-y-1 mb-2">
                             <p className="text-[10px] text-orange-800 dark:text-orange-400 font-black uppercase tracking-wider">Cancellation Requested</p>
                             {cancellationRequester && (

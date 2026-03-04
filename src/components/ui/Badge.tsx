@@ -17,7 +17,7 @@ export const Badge = ({ children, variant = 'slate', className = '' }: BadgeProp
     };
 
     return (
-        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${variants[variant]} ${className}`}>
+        <span className={`px-2 py-0.5 rounded-none text-[9px] font-black uppercase tracking-widest border transition-all ${variants[variant]} ${className}`}>
             {children}
         </span>
     );

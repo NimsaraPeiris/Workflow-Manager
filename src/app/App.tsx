@@ -158,7 +158,7 @@ function AppContent() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors">
                 <div className="animate-pulse flex flex-col items-center gap-6">
-                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl rotate-45 shadow-2xl"></div>
+                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-full rotate-45 shadow-2xl"></div>
                     <div className="h-2 w-32 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
                 </div>
             </div>
@@ -199,7 +199,7 @@ function AppContent() {
                 highPriorityCount={highPriorityCount}
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
-                userRole={user.user_metadata?.role}
+                user={user}
                 externalTaskCount={externalTaskCount}
                 approvedCount={approvedCount}
                 cancelledCount={cancelledCount}

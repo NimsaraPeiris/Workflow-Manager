@@ -214,7 +214,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
             {!filterDeptId && !loading && currentView === 'dashboard' && (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="h-8 w-1 bg-orange-600 rounded-full" />
+                        <div className="h-8 w-1 bg-orange-600 rounded-none" />
                         <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Organization Overview</h2>
                     </div>
 
@@ -226,7 +226,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                                     <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                                         {currentUser.user_metadata?.role === 'SUPER_ADMIN' ? 'All Organization Tasks' : 'My Department Tasks'}
                                     </h3>
-                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">
+                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-none font-bold">
                                         {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
                                     </span>
                                 </div>
@@ -240,7 +240,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center rounded-2xl transition-colors">
+                        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center rounded-none transition-colors">
                             <p className="text-slate-400 dark:text-slate-600 font-medium">No organizational data available for the current period.</p>
                         </div>
                     )}
@@ -253,7 +253,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                     {highPriorityTasks.length > 0 && (
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-rose-600">
-                                <div className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                                <div className="w-2 h-2 rounded-none bg-rose-600 animate-pulse" />
                                 <h2 className="text-sm font-bold uppercase tracking-widest">High Priority Actions</h2>
                             </div>
                             <TaskList
@@ -270,7 +270,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                             <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                 {highPriorityTasks.length > 0 ? 'General Tasks' : 'All Department Tasks'}
                             </h2>
-                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-800 transition-colors">
+                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-none border border-slate-100 dark:border-slate-800 transition-colors">
                                 {normalTasks.length} {normalTasks.length === 1 ? 'Task' : 'Tasks'}
                             </span>
                         </div>
@@ -282,7 +282,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                         />
 
                         {tasks.length === 0 && !loading && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-12 text-center rounded-xl transition-colors shadow-sm">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-12 text-center rounded-none transition-colors shadow-sm">
                                 <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">No tasks found for this department yet.</p>
                             </div>
                         )}

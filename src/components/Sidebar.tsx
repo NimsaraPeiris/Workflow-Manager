@@ -3,9 +3,14 @@ import {
     AlertCircle,
     ShieldCheck,
     Users,
-    PieChart
+    PieChart,
+    Moon,
+    Sun
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../lib/ThemeContext';
+import { hasPermission } from '../lib/permissions';
+
 
 interface SidebarProps {
     departments: any[];
@@ -18,10 +23,11 @@ interface SidebarProps {
     cancelledCount?: number;
     isOpen: boolean;
     onClose: () => void;
-    userRole?: string;
+    user: any;
     onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled') => void;
     currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled';
 }
+
 
 export const Sidebar = ({
     departments,
@@ -34,13 +40,21 @@ export const Sidebar = ({
     cancelledCount = 0,
     isOpen,
     onClose,
-    userRole,
+    user,
     onViewChange,
     currentView
 }: SidebarProps) => {
+    const { theme, toggleTheme } = useTheme();
     const isOverview = currentView === 'dashboard' && !selectedDeptId;
 
+    const canSeeUsers = hasPermission(user, 'user:view');
+    const canSeeAudit = hasPermission(user, 'audit:view');
+
+
+
+    const userRole = user?.user_metadata?.role || user?.role;
     const navItems = userRole !== 'EMPLOYEE' ? [
+
         {
             id: 'overview',
             label: 'Organization Overview',
@@ -54,21 +68,22 @@ export const Sidebar = ({
     ] : [];
 
     const adminItems = [
-        {
+        ...(canSeeUsers ? [{
             id: 'users',
             label: 'Teams & Permissions',
             icon: Users,
             active: currentView === 'users',
             onClick: () => onViewChange('users')
-        },
-        {
+        }] : []),
+        ...(canSeeAudit ? [{
             id: 'audit',
             label: 'Security Logs',
             icon: ShieldCheck,
             active: currentView === 'audit',
             onClick: () => onViewChange('audit')
-        }
+        }] : [])
     ];
+
 
     return (
         <>
@@ -114,7 +129,7 @@ export const Sidebar = ({
 
                         {/* Primary Navigation */}
                         <div className="space-y-1">
-                            <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Main Console</p>
+                            <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-orange-600 uppercase tracking-[0.2em] mb-2">Main Console</p>
                             {navItems.map((item) => (
                                 <button
                                     key={item.id}
@@ -137,7 +152,7 @@ export const Sidebar = ({
                         </div>
 
                         <div className="space-y-1 pt-2">
-                            <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">History & Logs</p>
+                            <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em] mb-2">History & Logs</p>
                             <button
                                 onClick={() => {
                                     onDeptSelect(null);
@@ -187,9 +202,10 @@ export const Sidebar = ({
                         </div>
 
                         {/* Admin Section */}
-                        {userRole === 'SUPER_ADMIN' && (
+                        {(canSeeUsers || canSeeAudit) && (
                             <div className="space-y-1 pt-2">
-                                <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Administration</p>
+                                <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em] mb-2">Administration</p>
+
                                 {adminItems.map((item) => (
                                     <button
                                         key={item.id}
@@ -215,8 +231,8 @@ export const Sidebar = ({
                         {/* Workflow Hub / Departments */}
                         <div className="space-y-1 pt-2">
                             <div className="flex items-center justify-between px-3 mb-2">
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Workflows</p>
-                                <Building2 size={12} className="text-slate-300 dark:text-slate-600" />
+                                <p className="text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em]">Workflows</p>
+                                <Building2 size={12} className="text-slate-300 dark:text-orange-500" />
                             </div>
                             <div className="space-y-0.5">
                                 {departments.map((dept) => (
@@ -283,8 +299,26 @@ export const Sidebar = ({
                     </div>
 
                     {/* Footer / App Badge */}
-                    <div className="p-4 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 mt-auto transition-colors">
-                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 flex items-center gap-4 border border-slate-100 dark:border-slate-800 transition-colors">
+                    <div className="p-4 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 mt-auto transition-colors space-y-4">
+                        {/* Theme Toggle Button */}
+                        <button
+                            onClick={toggleTheme}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-orange-600 dark:group-hover:text-orange-500 transition-colors">
+                                    {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                                </div>
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                                    {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                                </span>
+                            </div>
+                            <div className={`w-10 h-5 rounded-full p-1 transition-colors duration-300 ${theme === 'dark' ? 'bg-orange-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                                <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform duration-300 ${theme === 'dark' ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </div>
+                        </button>
+
+                        {/* <div className="bg-slate-50 dark:bg-slate-900/50 p-4 flex items-center gap-4 border border-slate-100 dark:border-slate-800 transition-colors rounded-2xl">
                             <div className="w-10 h-10 bg-orange-600 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-orange-100 dark:shadow-orange-900/10 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-white/10 group-hover:translate-x-full transition-transform duration-700" />
                                 <span className="relative">W</span>
@@ -293,7 +327,7 @@ export const Sidebar = ({
                                 <h5 className="text-xs font-bold text-slate-900 dark:text-white">Workflow Manager</h5>
                                 <p className="text-[10px] text-slate-400 font-medium">Alpha Version</p>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </aside>

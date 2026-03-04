@@ -45,7 +45,7 @@ export const AssignEmployeeModal = ({
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                    className="relative bg-white dark:bg-slate-900 max-w-md w-full shadow-2xl rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors"
+                    className="relative bg-white dark:bg-slate-900 max-w-md w-full shadow-2xl rounded-none border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors"
                 >
                     <div className="p-10">
                         <div className="flex items-center justify-between mb-8">
@@ -53,23 +53,23 @@ export const AssignEmployeeModal = ({
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none text-orange-600 dark:text-orange-500">Assignment</h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">Directly assign or transfer to another team</p>
                             </div>
-                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
+                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-none transition-all">
                                 <X size={24} />
                             </button>
                         </div>
 
                         {/* Mode Switcher */}
-                        <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-2xl mb-10 transition-colors">
+                        <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-none mb-10 transition-colors">
                             <button
                                 onClick={() => setMode('EMPLOYEE')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all ${mode === 'EMPLOYEE' ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-xl' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-none text-sm font-black transition-all ${mode === 'EMPLOYEE' ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-xl' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                             >
                                 <UserIcon size={18} />
                                 <span>Employee</span>
                             </button>
                             <button
                                 onClick={() => setMode('DEPARTMENT')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all ${mode === 'DEPARTMENT' ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-xl' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-none text-sm font-black transition-all ${mode === 'DEPARTMENT' ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-xl' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                             >
                                 <Building2 size={18} />
                                 <span>Department</span>
@@ -82,12 +82,12 @@ export const AssignEmployeeModal = ({
                                     <div className="flex items-center justify-between ml-1">
                                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Select Team Member</label>
                                         {!isHeadOfCurrentDept && (
-                                            <span className="text-[9px] text-rose-500 dark:text-rose-400 font-black uppercase tracking-[0.2em] bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full">Restricted</span>
+                                            <span className="text-[9px] text-rose-500 dark:text-rose-400 font-black uppercase tracking-[0.2em] bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-none">Restricted</span>
                                         )}
                                     </div>
 
                                     {!isHeadOfCurrentDept ? (
-                                        <div className="p-5 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-900/30 rounded-2xl flex items-start gap-3 transition-colors">
+                                        <div className="p-5 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-900/30 rounded-none flex items-start gap-3 transition-colors">
                                             <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={20} />
                                             <p className="text-xs text-rose-800 dark:text-rose-300 leading-relaxed font-bold">
                                                 You can only assign employees within your own department. If you need a different team to handle this, use the <strong>Department</strong> transfer option.
@@ -98,7 +98,7 @@ export const AssignEmployeeModal = ({
                                             <select
                                                 defaultValue=""
                                                 onChange={(e) => e.target.value && onAssign(e.target.value)}
-                                                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none hover:border-orange-200 dark:hover:border-orange-500/50 focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 transition-all appearance-none cursor-pointer text-slate-700 dark:text-slate-200 font-bold"
+                                                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-none outline-none hover:border-orange-200 dark:hover:border-orange-500/50 focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 transition-all appearance-none cursor-pointer text-slate-700 dark:text-slate-200 font-bold"
                                             >
                                                 <option value="" disabled className="dark:bg-slate-900">Choose an employee...</option>
                                                 {users.filter(u => u.department_id === taskDeptId).map(u => (
@@ -123,7 +123,7 @@ export const AssignEmployeeModal = ({
                                         <select
                                             defaultValue=""
                                             onChange={(e) => e.target.value && onAssign(null, e.target.value)}
-                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none hover:border-orange-200 dark:hover:border-orange-500/50 focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 transition-all appearance-none cursor-pointer text-slate-700 dark:text-slate-200 font-bold"
+                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-none outline-none hover:border-orange-200 dark:hover:border-orange-500/50 focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 transition-all appearance-none cursor-pointer text-slate-700 dark:text-slate-200 font-bold"
                                         >
                                             <option value="" disabled className="dark:bg-slate-900">Choose a department...</option>
                                             {departments.filter(d => d.id !== taskDeptId).map(dept => (
@@ -143,7 +143,7 @@ export const AssignEmployeeModal = ({
                             )}
 
                             <div className="pt-2">
-                                <Button onClick={onClose} variant="ghost" className="w-full h-14 rounded-2xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                                <Button onClick={onClose} variant="ghost" className="w-full h-14 rounded-none text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
                                     Cancel
                                 </Button>
                             </div>

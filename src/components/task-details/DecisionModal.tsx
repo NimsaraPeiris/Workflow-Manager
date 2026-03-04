@@ -73,14 +73,14 @@ export const DecisionModal = ({
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                    className="relative bg-white dark:bg-slate-900 max-w-lg w-full shadow-2xl overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800 transition-colors"
+                    className="relative bg-white dark:bg-slate-900 max-w-lg w-full shadow-2xl overflow-hidden rounded-none border border-slate-100 dark:border-slate-800 transition-colors"
                 >
                     {/* Header Accent Bar */}
                     <div className={`h-2 w-full ${isReject ? 'bg-rose-500' : 'bg-emerald-500'} dark:opacity-80`} />
 
                     <div className="p-10">
                         <div className="flex items-start gap-6 mb-8">
-                            <div className={`p-4 ${isReject ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-emerald-50 dark:bg-emerald-500/10'} rounded-2xl transition-colors`}>
+                            <div className={`p-4 ${isReject ? 'bg-rose-50 dark:bg-rose-500/10' : 'bg-emerald-50 dark:bg-emerald-500/10'} rounded-none transition-colors`}>
                                 {config.icon}
                             </div>
                             <div>
@@ -105,7 +105,7 @@ export const DecisionModal = ({
                                         if (error) setError('');
                                     }}
                                     placeholder={config.placeholder}
-                                    className={`w-full h-44 pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/40 border-2 ${error ? 'border-rose-400 dark:border-rose-500/50' : 'border-slate-100 dark:border-slate-700/50'} rounded-2xl outline-none group-hover:bg-white dark:group-hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:ring-8 focus:ring-orange-500/5 focus:border-orange-500 dark:focus:border-orange-500 dark:text-white dark:placeholder:text-slate-600 transition-all resize-none font-bold text-slate-700 leading-relaxed`}
+                                    className={`w-full h-44 pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/40 border-2 ${error ? 'border-rose-400 dark:border-rose-500/50' : 'border-slate-100 dark:border-slate-700/50'} rounded-none outline-none group-hover:bg-white dark:group-hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:ring-8 focus:ring-orange-500/5 focus:border-orange-500 dark:focus:border-orange-500 dark:text-white dark:placeholder:text-slate-600 transition-all resize-none font-bold text-slate-700 leading-relaxed`}
                                 />
                                 {error && (
                                     <motion.p
@@ -118,7 +118,7 @@ export const DecisionModal = ({
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-2xl transition-colors">
+                            <div className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-none transition-colors">
                                 <Info className="text-slate-400 dark:text-slate-600 shrink-0" size={20} />
                                 <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed uppercase tracking-tighter">
                                     This decision will be captured in the <strong className="text-slate-700 dark:text-slate-200">Audit Log</strong> and added to the <strong className="text-slate-700 dark:text-slate-200">Activity Timeline</strong> for future reference.
@@ -129,7 +129,7 @@ export const DecisionModal = ({
                                 <Button
                                     onClick={onClose}
                                     variant="outline"
-                                    className="flex-1 h-14 rounded-2xl text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 font-black uppercase tracking-widest text-[10px]"
+                                    className="flex-1 h-14 rounded-none text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 font-black uppercase tracking-widest text-[10px]"
                                     disabled={loading}
                                 >
                                     Go Back
@@ -137,7 +137,7 @@ export const DecisionModal = ({
                                 <Button
                                     onClick={handleConfirm}
                                     variant={config.variant}
-                                    className="flex-1 h-14 rounded-2xl shadow-xl font-black uppercase tracking-widest text-[10px]"
+                                    className="flex-1 h-14 rounded-none shadow-xl font-black uppercase tracking-widest text-[10px]"
                                     loading={loading}
                                 >
                                     {config.confirmText}

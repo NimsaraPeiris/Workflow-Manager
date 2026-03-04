@@ -64,15 +64,15 @@ export const ConfirmationModal = ({
                         initial={{ scale: 0.95, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                        className="relative bg-white dark:bg-slate-900 max-w-sm w-full shadow-2xl rounded-3xl border border-slate-100 dark:border-slate-800 p-8 transition-colors"
+                        className="relative bg-white dark:bg-slate-900 max-w-sm w-full shadow-2xl rounded-none border border-slate-100 dark:border-slate-800 p-8 transition-colors"
                     >
                         <div className="flex items-start justify-between mb-6">
-                            <div className={`p-4 rounded-2xl ${colors.bg} ${colors.text} transition-colors shadow-sm`}>
+                            <div className={`p-4 rounded-none ${colors.bg} ${colors.text} transition-colors shadow-sm`}>
                                 <AlertCircle size={28} />
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-none transition-all"
                             >
                                 <X size={20} />
                             </button>
@@ -91,7 +91,7 @@ export const ConfirmationModal = ({
                             <Button
                                 onClick={onClose}
                                 variant="outline"
-                                className="flex-1 h-12 rounded-2xl dark:border-slate-800 dark:text-slate-400 font-bold order-2 sm:order-1"
+                                className="flex-1 h-12 rounded-none dark:border-slate-800 dark:text-slate-400 font-bold order-2 sm:order-1"
                                 disabled={loading}
                             >
                                 {cancelText}
@@ -99,7 +99,7 @@ export const ConfirmationModal = ({
                             <Button
                                 onClick={onConfirm}
                                 variant={colors.button}
-                                className="flex-1 h-12 rounded-2xl shadow-xl font-bold order-1 sm:order-2"
+                                className="flex-1 h-12 rounded-none shadow-xl font-bold order-1 sm:order-2"
                                 loading={loading}
                             >
                                 {confirmText}

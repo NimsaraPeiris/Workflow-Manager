@@ -25,13 +25,13 @@ export const TaskActivityTimeline = ({
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 rounded-2xl transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 rounded-none transition-colors">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                     <History className="text-orange-600 dark:text-orange-500" size={20} />
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Activity Timeline</h3>
                 </div>
-                <label className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-black cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all uppercase tracking-widest rounded-lg">
+                <label className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-black cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all uppercase tracking-widest rounded-none">
                     <Paperclip size={14} />
                     {uploading ? 'Uploading...' : 'Attach File'}
                     <input type="file" className="hidden" onChange={onFileUpload} disabled={uploading} />
@@ -42,7 +42,7 @@ export const TaskActivityTimeline = ({
                 {activities && activities.length > 0 ? (
                     [...activities].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((act: any) => (
                         <div key={act.id} className="relative flex gap-6 group">
-                            <div className={`mt-1 h-10 w-10 rounded-full flex items-center justify-center shrink-0 z-10 transition-all shadow-sm ${act.activity_type === 'COMMENT' ? 'bg-white dark:bg-slate-900 border-2 border-orange-500 text-orange-500' :
+                            <div className={`mt-1 h-10 w-10 rounded-none flex items-center justify-center shrink-0 z-10 transition-all shadow-sm ${act.activity_type === 'COMMENT' ? 'bg-white dark:bg-slate-900 border-2 border-orange-500 text-orange-500' :
                                 act.activity_type === 'ATTACHMENT' ? 'bg-white dark:bg-slate-900 border-2 border-blue-500 text-blue-500' :
                                     'bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-600'
                                 }`}>
@@ -58,13 +58,13 @@ export const TaskActivityTimeline = ({
                                         {new Date(act.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                                     </time>
                                 </div>
-                                <div className={`p-4 border rounded-xl transition-colors ${act.activity_type === 'COMMENT' ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300' :
+                                <div className={`p-4 border rounded-none transition-colors ${act.activity_type === 'COMMENT' ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300' :
                                     act.activity_type === 'ATTACHMENT' ? 'bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30 text-blue-900 dark:text-blue-200' :
                                         'bg-white dark:bg-slate-950/20 border-transparent text-slate-500 dark:text-slate-400 italic text-sm'
                                     }`}>
                                     {act.activity_type === 'ATTACHMENT' ? (
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-900 text-blue-500 rounded-lg"><FileText size={20} /></div>
+                                            <div className="p-2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-900 text-blue-500 rounded-none"><FileText size={20} /></div>
                                             <div className="flex-1 truncate">
                                                 <p className="text-sm font-bold dark:text-slate-200 truncate">{act.file_name}</p>
                                                 <a href={act.file_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-black hover:underline flex items-center gap-1 uppercase tracking-tighter mt-1">
@@ -96,7 +96,7 @@ export const TaskActivityTimeline = ({
                 />
                 <button
                     onClick={handleSend}
-                    className="p-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-all active:scale-90 shadow-md shadow-orange-200 dark:shadow-none"
+                    className="p-3 bg-orange-600 hover:bg-orange-700 text-white rounded-none transition-all active:scale-90 shadow-md shadow-orange-200 dark:shadow-none"
                 >
                     <Send size={20} />
                 </button>

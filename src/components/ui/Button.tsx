@@ -28,10 +28,10 @@ export const Button = ({
     };
 
     const sizes = {
-        sm: 'px-3 py-1.5 text-xs rounded-lg',
-        md: 'px-5 py-2.5 text-sm rounded-xl font-bold',
-        lg: 'px-8 py-4 text-base rounded-2xl font-bold',
-        icon: 'p-2 rounded-lg'
+        sm: 'px-3 py-1.5 text-xs rounded-none',
+        md: 'px-5 py-2.5 text-sm rounded-none font-bold',
+        lg: 'px-8 py-4 text-base rounded-none font-bold',
+        icon: 'p-2 rounded-none'
     };
 
     return (

@@ -38,11 +38,11 @@ export default function AuditLogsPage() {
     };
 
     const getActionColor = (action: string) => {
-        if (action.includes('CREATE')) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-        if (action.includes('DELETE')) return 'bg-rose-50 text-rose-700 border-rose-100';
-        if (action.includes('UPDATE') || action.includes('EDIT')) return 'bg-blue-50 text-blue-700 border-blue-100';
-        if (action.includes('LOGIN')) return 'bg-orange-50 text-orange-700 border-orange-100';
-        return 'bg-slate-50 text-slate-700 border-slate-100';
+        if (action.includes('CREATE')) return 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50';
+        if (action.includes('DELETE')) return 'bg-rose-50 dark:bg-rose-900/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50';
+        if (action.includes('UPDATE') || action.includes('EDIT')) return 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/50';
+        if (action.includes('LOGIN')) return 'bg-orange-50 dark:bg-orange-900/10 text-orange-700 dark:text-orange-400 border-orange-100 dark:border-orange-800/50';
+        return 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-100 dark:border-slate-700';
     };
 
     const formatDetail = (log: any) => {
@@ -88,20 +88,20 @@ export default function AuditLogsPage() {
     });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <div className="p-2 bg-slate-900 text-white rounded">
+                        <div className="p-2 bg-slate-900 dark:bg-orange-600 text-white rounded-none">
                             <ShieldCheck size={20} />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">System Audit Vault</h2>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">System Audit Vault</h2>
                     </div>
-                    <p className="text-slate-500 text-sm">Read-only immutable sequence of all administrative events</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Read-only immutable sequence of all administrative events</p>
                 </div>
                 <button
                     onClick={fetchLogs}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 shadow-sm transition-all"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm transition-all"
                 >
                     <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                     Refresh Logs
@@ -115,7 +115,7 @@ export default function AuditLogsPage() {
                     <input
                         type="text"
                         placeholder="Filter by action, user or ID..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white transition-all text-sm rounded-none"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -123,7 +123,7 @@ export default function AuditLogsPage() {
                 <div className="flex items-center gap-2">
                     <Filter className="text-slate-400 shrink-0" size={18} />
                     <select
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm cursor-pointer"
+                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white transition-all text-sm cursor-pointer rounded-none"
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
                     >
@@ -137,32 +137,32 @@ export default function AuditLogsPage() {
             </div>
 
             {/* Logs List */}
-            <div className="bg-white border border-slate-200 shadow-sm overflow-hidden rounded-xl">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-none transition-colors">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50/80 border-b border-slate-100">
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event Time</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Initiator</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Operation</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Component</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Summary</th>
+                            <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Event Time</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Initiator</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Operation</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Component</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Summary</th>
                                 <th className="px-4 py-4 w-10"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {loading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
                                         <td colSpan={6} className="px-6 py-8">
-                                            <div className="h-4 bg-slate-50 rounded w-full"></div>
+                                            <div className="h-4 bg-slate-50 dark:bg-slate-800 rounded-none w-full"></div>
                                         </td>
                                     </tr>
                                 ))
                             ) : filteredLogs.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-24 text-center">
-                                        <History size={48} className="mx-auto mb-4 text-slate-200" />
+                                        <History size={48} className="mx-auto mb-4 text-slate-200 dark:text-slate-800" />
                                         <p className="text-slate-400 font-medium">No encrypted audit trails found</p>
                                     </td>
                                 </tr>
@@ -171,25 +171,25 @@ export default function AuditLogsPage() {
                                     <React.Fragment key={log.id}>
                                         <tr
                                             onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
-                                            className={`group cursor-pointer transition-colors ${expandedLogId === log.id ? 'bg-orange-50/30' : 'hover:bg-slate-50/50'}`}
+                                            className={`group cursor-pointer transition-colors ${expandedLogId === log.id ? 'bg-orange-50/30 dark:bg-orange-900/10' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'}`}
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-slate-900">
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200">
                                                         {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 font-medium">
+                                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                                                         {new Date(log.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                                                    <div className="w-7 h-7 rounded-none bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
                                                         <UserIcon size={14} />
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-slate-700 leading-none mb-1">
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-none mb-1">
                                                             {log.profile?.full_name || 'System'}
                                                         </span>
                                                         <span className="text-[9px] text-slate-400 font-mono tracking-tighter">
@@ -205,9 +205,9 @@ export default function AuditLogsPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-slate-600">{log.entity_type}</span>
+                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{log.entity_type}</span>
                                                     {log.entity_id && (
-                                                        <span className="text-[9px] font-mono text-slate-400">
+                                                        <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">
                                                             ID: {log.entity_id.slice(0, 12)}
                                                         </span>
                                                     )}
@@ -215,13 +215,13 @@ export default function AuditLogsPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <p className="text-xs font-medium text-slate-600">
+                                                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         {formatDetail(log)}
                                                     </p>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4 text-center">
-                                                <Info size={16} className={`mx-auto transition-colors ${expandedLogId === log.id ? 'text-orange-500' : 'text-slate-300 group-hover:text-slate-400'}`} />
+                                                <Info size={16} className={`mx-auto transition-colors ${expandedLogId === log.id ? 'text-orange-500' : 'text-slate-300 dark:text-slate-700 group-hover:text-slate-400 dark:group-hover:text-slate-500'}`} />
                                             </td>
                                         </tr>
 
@@ -229,17 +229,17 @@ export default function AuditLogsPage() {
                                             <motion.tr
                                                 initial={{ opacity: 0, height: 0 }}
                                                 animate={{ opacity: 1, height: 'auto' }}
-                                                className="bg-slate-50/80 border-x border-slate-100"
+                                                className="bg-slate-50/80 dark:bg-slate-800/30 border-x border-slate-100 dark:border-slate-800"
                                             >
                                                 <td colSpan={6} className="px-12 py-6">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                         <div className="space-y-3">
-                                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                                <span className="w-1 h-1 bg-slate-400 rounded-full"></span>
+                                                            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                                <span className="w-1 h-1 bg-slate-400 dark:bg-slate-600 rounded-none"></span>
                                                                 Raw Metadata Snapshot
                                                             </h4>
-                                                            <div className="bg-white border border-slate-200 p-4 rounded-lg shadow-inner overflow-hidden">
-                                                                <pre className="text-[10px] font-mono text-slate-500 whitespace-pre-wrap">
+                                                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-none shadow-inner overflow-hidden">
+                                                                <pre className="text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-pre-wrap">
                                                                     {JSON.stringify({
                                                                         id: log.id,
                                                                         actor_id: log.user_id,
@@ -250,29 +250,29 @@ export default function AuditLogsPage() {
                                                             </div>
                                                         </div>
                                                         <div className="space-y-3">
-                                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                                <span className="w-1 h-1 bg-slate-400 rounded-full"></span>
+                                                            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                                                <span className="w-1 h-1 bg-slate-400 dark:bg-slate-600 rounded-none"></span>
                                                                 Data Transformation
                                                             </h4>
                                                             <div className="space-y-2">
                                                                 {log.old_data && (
-                                                                    <div className="bg-rose-50/50 border border-rose-100/50 p-3 rounded-lg">
-                                                                        <span className="text-[9px] font-bold text-rose-600 uppercase mb-2 block">Previous State</span>
-                                                                        <pre className="text-[10px] font-mono text-rose-700/70">
+                                                                    <div className="bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-800/30 p-3 rounded-none">
+                                                                        <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase mb-2 block">Previous State</span>
+                                                                        <pre className="text-[10px] font-mono text-rose-700/70 dark:text-rose-300 gap-1">
                                                                             {JSON.stringify(log.old_data, null, 2)}
                                                                         </pre>
                                                                     </div>
                                                                 )}
                                                                 {log.new_data && (
-                                                                    <div className="bg-emerald-50/50 border border-emerald-100/50 p-3 rounded-lg">
-                                                                        <span className="text-[9px] font-bold text-emerald-600 uppercase mb-2 block">New State</span>
-                                                                        <pre className="text-[10px] font-mono text-emerald-700/70">
+                                                                    <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/30 p-3 rounded-none">
+                                                                        <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-2 block">New State</span>
+                                                                        <pre className="text-[10px] font-mono text-emerald-700/70 dark:text-emerald-300">
                                                                             {JSON.stringify(log.new_data, null, 2)}
                                                                         </pre>
                                                                     </div>
                                                                 )}
                                                                 {!log.old_data && !log.new_data && (
-                                                                    <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-lg">
+                                                                    <div className="py-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-none">
                                                                         <p className="text-[10px] text-slate-400 font-medium italic">No dynamic data mutation recorded for this event</p>
                                                                     </div>
                                                                 )}
@@ -290,7 +290,7 @@ export default function AuditLogsPage() {
                 </div>
             </div>
 
-            <p className="text-[10px] text-slate-400 italic text-center">
+            <p className="text-[10px] text-slate-400 dark:text-slate-600 italic text-center">
                 Audit records are tamper-proof and stored permanently for compliance.
             </p>
         </div>
