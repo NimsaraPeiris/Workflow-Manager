@@ -7,7 +7,8 @@ import {
     CreateDeptModal,
     CreateUserModal,
     RoleManagementModal,
-    EditPermissionsModal
+    EditPermissionsModal,
+    CreateTeamModal
 } from '../../components/admin';
 import {
     ManageRolesButton,
@@ -30,13 +31,16 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
     const [searchQuery, setSearchQuery] = useState('');
     const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
     const [roles, setRoles] = useState<any[]>([]);
     const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedUserForEdit, setSelectedUserForEdit] = useState<User | null>(null);
     const [editLoading, setEditLoading] = useState(false);
-
+    const [teams, setTeams] = useState<any[]>([]);
+    const [newTeam, setNewTeam] = useState({ name: '', departmentId: '' });
+    const [teamLoading, setTeamLoading] = useState(false);
 
     const [newDeptName, setNewDeptName] = useState('');
     const [deptLoading, setDeptLoading] = useState(false);
@@ -47,6 +51,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         fullName: '',
         password: '',
         departmentId: '',
+        teamId: '',
         role: 'EMPLOYEE',
         roleId: '',
         permissions: [] as string[]
@@ -70,10 +75,12 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         setLoading(true);
         try {
             const { data: depts } = await supabase.from('departments').select('*').order('name');
-            const { data: profs } = await supabase.from('profiles').select('*');
+            const { data: profs } = await supabase.from('profiles').select('*, team:teams(name)');
+            const { data: teamData } = await supabase.from('teams').select('*, departments(name)').order('name');
 
             if (depts) setDepartments(depts);
-            if (profs) setUsers(profs);
+            if (profs) setUsers(profs as any);
+            if (teamData) setTeams(teamData);
         } catch (err) {
             console.error('Error fetching data:', err);
         } finally {
@@ -109,6 +116,39 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         }
     };
 
+    const handleCreateTeam = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setTeamLoading(true);
+        setError('');
+        try {
+            const { data: teamData, error: teamErr } = await supabase
+                .from('teams')
+                .insert([{ name: newTeam.name, department_id: newTeam.departmentId }])
+                .select()
+                .single();
+
+            if (teamErr) throw teamErr;
+
+            if (teamData) {
+                await auditLogger.log({
+                    userId: currentUser?.id || null,
+                    action: 'TEAM_CREATE',
+                    entityType: 'Team',
+                    entityId: teamData.id,
+                    newData: newTeam
+                });
+            }
+
+            setNewTeam({ name: '', departmentId: '' });
+            setIsTeamModalOpen(false);
+            fetchData();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setTeamLoading(false);
+        }
+    };
+
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setUserLoading(true);
@@ -121,6 +161,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                     data: {
                         full_name: newUser.fullName,
                         department_id: newUser.departmentId === '' ? null : newUser.departmentId,
+                        team_id: newUser.teamId === '' ? null : newUser.teamId,
                         role: newUser.role,
                         role_id: newUser.roleId === '' ? null : newUser.roleId,
                         permissions: newUser.permissions || []
@@ -141,13 +182,14 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                         role: newUser.role,
                         role_id: newUser.roleId === '' ? null : newUser.roleId,
                         department_id: newUser.departmentId === '' ? null : newUser.departmentId,
+                        team_id: newUser.teamId === '' ? null : newUser.teamId,
                         permissions: newUser.permissions || []
                     }
                 });
             }
 
             setIsUserModalOpen(false);
-            setNewUser({ email: '', fullName: '', password: '', departmentId: '', role: 'EMPLOYEE', roleId: '', permissions: [] });
+            setNewUser({ email: '', fullName: '', password: '', departmentId: '', teamId: '', role: 'EMPLOYEE', roleId: '', permissions: [] });
 
             fetchData();
             // Reset state
@@ -156,6 +198,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                 fullName: '',
                 password: '',
                 departmentId: '',
+                teamId: '',
                 role: 'EMPLOYEE',
                 roleId: '',
                 permissions: []
@@ -185,6 +228,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                     full_name: updates.fullName,
                     role: updates.role,
                     department_id: updates.departmentId,
+                    team_id: updates.teamId === '' ? null : updates.teamId,
                     permissions: updates.permissions || [],
                     role_id: updates.roleId === '' ? null : updates.roleId,
                     updated_at: new Date().toISOString()
@@ -238,7 +282,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Organization Management</h1>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Departments & Permissions</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Manage departments, users, and hierarchy across the platform.</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -415,6 +459,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                 newUser={newUser}
                 setNewUser={setNewUser}
                 departments={departments}
+                teams={teams}
                 roles={roles}
                 loading={userLoading}
 
@@ -441,8 +486,20 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                 onSave={handleUpdatePermissions}
                 user={selectedUserForEdit}
                 departments={departments}
+                teams={teams}
                 roles={roles}
                 loading={editLoading}
+                error={error}
+            />
+
+            <CreateTeamModal
+                isOpen={isTeamModalOpen}
+                onClose={() => setIsTeamModalOpen(false)}
+                onSubmit={handleCreateTeam}
+                newTeam={newTeam}
+                setNewTeam={setNewTeam}
+                departments={departments}
+                loading={teamLoading}
                 error={error}
             />
         </div>

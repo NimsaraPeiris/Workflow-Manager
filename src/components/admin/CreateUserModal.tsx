@@ -10,6 +10,7 @@ interface CreateUserModalProps {
     newUser: any;
     setNewUser: (user: any) => void;
     departments: Department[];
+    teams?: any[];
     roles?: any[];
     loading: boolean;
     error: string;
@@ -25,6 +26,7 @@ export const CreateUserModal = ({
     newUser,
     setNewUser,
     departments,
+    teams = [],
     roles = [],
     loading,
     error
@@ -148,6 +150,19 @@ export const CreateUserModal = ({
                                             >
                                                 <option value="" className="dark:bg-slate-900">Select Node</option>
                                                 {departments.map(d => <option key={d.id} value={d.id} className="dark:bg-slate-900">{d.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Squad (Team)</label>
+                                            <select
+                                                value={newUser.teamId || ''}
+                                                onChange={(e) => setNewUser({ ...newUser, teamId: e.target.value })}
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-orange-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                            >
+                                                <option value="" className="dark:bg-slate-900">No Squad Assigned</option>
+                                                {teams.filter(t => t.department_id === newUser.departmentId).map(t => (
+                                                    <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="space-y-2 md:col-span-2 lg:col-span-1">

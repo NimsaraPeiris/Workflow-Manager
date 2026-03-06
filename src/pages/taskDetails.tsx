@@ -33,11 +33,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const [users, setUsers] = useState<any[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
+    const [teams, setTeams] = useState<any[]>([]);
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<TaskStatus | null>(null);
     const [uploading, setUploading] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({ title: '', description: '', confirmText: '', variant: 'primary' as 'primary' | 'danger' | 'warning' });
+    const [pendingAssignment, setPendingAssignment] = useState<{ userId: string | null; teamId?: string | null; newDeptId?: string } | null>(null);
 
     const canAssign = hasPermission(currentUser, 'task:assign');
     const canEdit = hasPermission(currentUser, 'task:edit');
@@ -45,6 +47,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     useEffect(() => {
         fetchTaskDetails();
         fetchDepartments();
+        fetchTeams();
         if (canAssign) fetchUsers();
     }, [taskId]);
 
@@ -53,13 +56,18 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         if (data) setDepartments(data);
     };
 
+    const fetchTeams = async () => {
+        const { data } = await supabase.from('teams').select('*').order('name');
+        if (data) setTeams(data);
+    };
+
     const fetchUsers = async () => {
         const { data } = await supabase
             .from('profiles')
-            .select('id, full_name, department_id, role, departments(name)');
+            .select('id, full_name, department_id, team_id, role, departments(name), teams(name)');
 
         if (data) {
-            setUsers(data.filter(u => u.role === 'EMPLOYEE'));
+            setUsers(data); // Include everyone, filtering will happen in the modal
         }
     };
 
@@ -73,6 +81,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     creator:profiles!tasks_creator_id_fkey(full_name),
                     assignee:profiles!tasks_assignee_id_fkey(full_name),
                     department:departments(name),
+                    team:teams(name),
                     sub_tasks(*),
                     activities:task_activities(
                         *,
@@ -219,9 +228,30 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const executeStatusUpdate = async (newStatus: TaskStatus) => {
         setUpdating(true);
         const oldStatus = task?.status;
+        const updates: any = {
+            status: newStatus,
+            updated_at: new Date().toISOString()
+        };
+
+        // TIME TRACKING LOGIC
+        const now = new Date();
+
+        // If resuming or starting work, set the start timestamp
+        if (newStatus === 'IN_PROGRESS') {
+            updates.timer_started_at = now.toISOString();
+        }
+
+        // If pausing or finishing work (moving away from IN_PROGRESS)
+        if (oldStatus === 'IN_PROGRESS' && task?.timer_started_at) {
+            const startTime = new Date(task.timer_started_at);
+            const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+            updates.total_time_spent = (task.total_time_spent || 0) + elapsedSeconds;
+            updates.timer_started_at = null; // Clear timer when not in progress
+        }
+
         const { error } = await supabase
             .from('tasks')
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .update(updates)
             .eq('id', taskId);
 
         if (!error) {
@@ -231,7 +261,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 entityType: 'Task',
                 entityId: taskId,
                 oldData: { status: oldStatus },
-                newData: { status: newStatus }
+                newData: { status: newStatus, ...updates }
             });
             await addActivity({
                 activity_type: 'STATUS_CHANGE',
@@ -252,11 +282,24 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const handleDecision = async (status: TaskStatus, comment: string) => {
         setUpdating(true);
         const oldStatus = task?.status;
+        const updates: any = {
+            status: status,
+            updated_at: new Date().toISOString()
+        };
+
+        // If finishing work through decision
+        if (oldStatus === 'IN_PROGRESS' && task?.timer_started_at) {
+            const now = new Date();
+            const startTime = new Date(task.timer_started_at);
+            const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+            updates.total_time_spent = (task.total_time_spent || 0) + elapsedSeconds;
+            updates.timer_started_at = null;
+        }
 
         // 1. Update status
         const { error } = await supabase
             .from('tasks')
-            .update({ status: status, updated_at: new Date().toISOString() })
+            .update(updates)
             .eq('id', taskId);
 
         if (!error) {
@@ -292,7 +335,27 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         setUpdating(false);
     };
 
-    const handleAssign = async (userId: string | null, newDeptId?: string) => {
+    const handleAssign = (userId: string | null, teamId?: string | null, newDeptId?: string) => {
+        const selectedUser = users.find(u => u.id === userId);
+        const selectedTeam = teams.find(t => t.id === teamId);
+        const selectedDept = departments.find(d => d.id === newDeptId);
+
+        setPendingAssignment({ userId, teamId, newDeptId });
+        setConfirmConfig({
+            title: newDeptId ? 'Transfer Task' : teamId ? 'Assign Team' : 'Assign Member',
+            description: newDeptId
+                ? `Are you sure you want to transfer this task to ${selectedDept?.name}? It will be moved to their queue for acceptance.`
+                : teamId
+                    ? `Assign this task to the entire ${selectedTeam?.name} squad?`
+                    : `Assign this task to ${selectedUser?.full_name || 'this team member'}?`,
+            confirmText: newDeptId ? 'Transfer Now' : 'Assign Now',
+            variant: 'primary'
+        });
+        setPendingStatus(null);
+        setShowConfirmModal(true);
+    };
+
+    const executeAssignment = async (userId: string | null, teamId?: string | null, newDeptId?: string) => {
         setUpdating(true);
         const updates: any = {
             updated_at: new Date().toISOString()
@@ -300,10 +363,16 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
         if (newDeptId) {
             updates.department_id = newDeptId;
+            updates.team_id = null;
             updates.assignee_id = null; // Reset assignee when moving depts
             updates.status = 'CREATED'; // Reset status to CREATED for new dept head to accept
+        } else if (teamId) {
+            updates.team_id = teamId;
+            updates.assignee_id = null; // Unassign individual when assigning team
+            updates.status = 'ASSIGNED';
         } else if (userId) {
             updates.assignee_id = userId;
+            updates.team_id = users.find(u => u.id === userId)?.team_id || null;
             updates.status = 'ASSIGNED';
         }
 
@@ -328,13 +397,19 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 activity_type: 'EDIT',
                 content: newDeptId
                     ? `Task transferred to department: ${selectedDept?.name || 'Unknown'}`
-                    : `Task assigned to ${selectedUser?.full_name || 'employee'}`,
-                field_name: newDeptId ? 'department_id' : 'assignee_id',
-                new_value: newDeptId || userId || undefined
+                    : teamId
+                        ? `Task assigned to team: ${teams.find(t => t.id === teamId)?.name || 'Unknown'}`
+                        : `Task assigned to ${selectedUser?.full_name || 'employee'}`,
+                field_name: newDeptId ? 'department_id' : teamId ? 'team_id' : 'assignee_id',
+                new_value: newDeptId || teamId || userId || undefined
             });
 
+            setShowConfirmModal(false);
+            setPendingAssignment(null);
             setShowAssignModal(false);
             fetchTaskDetails();
+        } else {
+            alert(`Failed to assign task: ${error.message}`);
         }
         setUpdating(false);
     };
@@ -446,9 +521,21 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     <SubTaskSection
                         subTasks={task.sub_tasks || []}
                         onToggle={async (id: string, isCompleted: boolean) => {
+                            const sub = task.sub_tasks?.find(s => s.id === id);
+                            const updates: any = { is_completed: isCompleted, updated_at: new Date().toISOString() };
+
+                            // Stop subtask timer if completing it
+                            if (isCompleted && sub?.timer_started_at) {
+                                const now = new Date();
+                                const startTime = new Date(sub.timer_started_at);
+                                const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+                                updates.total_time_spent = (sub.total_time_spent || 0) + elapsedSeconds;
+                                updates.timer_started_at = null;
+                            }
+
                             const { error } = await supabase
                                 .from('sub_tasks')
-                                .update({ is_completed: isCompleted, updated_at: new Date().toISOString() })
+                                .update(updates)
                                 .eq('id', id);
                             if (!error) fetchTaskDetails();
                         }}
@@ -458,7 +545,8 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                                 .insert([{
                                     task_id: taskId,
                                     title,
-                                    due_date: subDueDate || null
+                                    due_date: subDueDate || null,
+                                    total_time_spent: 0
                                 }]);
                             if (!error) fetchTaskDetails();
                         }}
@@ -466,6 +554,33 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             const { error } = await supabase
                                 .from('sub_tasks')
                                 .delete()
+                                .eq('id', id);
+                            if (!error) fetchTaskDetails();
+                        }}
+                        onTimerToggle={async (id: string, isStarting: boolean) => {
+                            const sub = task.sub_tasks?.find(s => s.id === id);
+                            if (!sub) return;
+
+                            const now = new Date();
+                            const updates: any = { updated_at: now.toISOString() };
+
+                            if (isStarting) {
+                                updates.timer_started_at = now.toISOString();
+                                // Also ensure the main task is IN_PROGRESS if we start a subtask?
+                                // User might expect this.
+                                if (task.status !== 'IN_PROGRESS') {
+                                    await executeStatusUpdate('IN_PROGRESS');
+                                }
+                            } else if (sub.timer_started_at) {
+                                const startTime = new Date(sub.timer_started_at);
+                                const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+                                updates.total_time_spent = (sub.total_time_spent || 0) + elapsedSeconds;
+                                updates.timer_started_at = null;
+                            }
+
+                            const { error } = await supabase
+                                .from('sub_tasks')
+                                .update(updates)
                                 .eq('id', id);
                             if (!error) fetchTaskDetails();
                         }}
@@ -504,6 +619,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 onAssign={handleAssign}
                 users={users}
                 departments={departments}
+                teams={teams}
                 taskDeptId={task.department_id}
                 currentUser={currentUser}
             />
@@ -525,7 +641,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     setShowConfirmModal(false);
                     setPendingStatus(null);
                 }}
-                onConfirm={() => pendingStatus && executeStatusUpdate(pendingStatus)}
+                onConfirm={() => {
+                    if (pendingStatus) {
+                        executeStatusUpdate(pendingStatus);
+                    } else if (pendingAssignment) {
+                        executeAssignment(pendingAssignment.userId, pendingAssignment.teamId, pendingAssignment.newDeptId);
+                    }
+                }}
                 title={confirmConfig.title}
                 description={confirmConfig.description}
                 confirmText={confirmConfig.confirmText}

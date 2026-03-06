@@ -2,6 +2,7 @@ import { Clock, Tag } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { Task, TaskStatus } from '../../types';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
+import { TaskTimer } from './TaskTimer';
 
 interface TaskMainContentProps {
     task: Task;
@@ -46,12 +47,27 @@ export const TaskMainContent = ({ task, getBadgeVariant, canEdit, onDateUpdate }
 
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 rounded-none transition-colors">
-            <div className="flex items-center gap-3 mb-6">
-                <Badge variant={getBadgeVariant(task.status)}>{task.status}</Badge>
-                <Badge variant={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'yellow' : 'green'}>
-                    {task.priority} Priority
-                </Badge>
-                {getDeadlineLabel()}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                    <Badge variant={getBadgeVariant(task.status)}>{task.status}</Badge>
+                    <Badge variant={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'yellow' : 'green'}>
+                        {task.priority} Priority
+                    </Badge>
+                    {getDeadlineLabel()}
+                </div>
+
+                {task.assignee_id && (
+                    <div className="flex items-center gap-4">
+                        <TaskTimer
+                            totalTimeSpent={task.total_time_spent || 0}
+                            timerStartedAt={task.timer_started_at || null}
+                            status={task.status}
+                        />
+                    </div>
+                )}
+                {task.team && (
+                    <Badge variant="blue">Team: {task.team.name}</Badge>
+                )}
             </div>
 
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight tracking-tight">{task.title}</h1>

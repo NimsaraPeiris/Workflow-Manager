@@ -23,6 +23,7 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
             case 'REJECTED': return 'rose';
             case 'CANCELLED': return 'slate';
             case 'CANCEL_REQUESTED': return 'rose';
+            case 'PAUSED': return 'orange';
             default: return 'orange';
         }
     };

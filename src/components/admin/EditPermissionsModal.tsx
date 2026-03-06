@@ -10,6 +10,7 @@ interface EditPermissionsModalProps {
     onSave: (userId: string, updates: any) => Promise<void>;
     user: any;
     departments: Department[];
+    teams: any[];
     roles: any[];
     loading: boolean;
     error: string;
@@ -21,6 +22,7 @@ export const EditPermissionsModal = ({
     onSave,
     user,
     departments,
+    teams,
     roles,
     loading,
     error
@@ -34,6 +36,7 @@ export const EditPermissionsModal = ({
                 fullName: user.full_name,
                 role: user.role,
                 departmentId: user.department_id,
+                teamId: user.team_id || '',
                 permissions: Array.isArray(user.permissions) ? user.permissions : [],
                 roleId: user.role_id || ''
             });
@@ -137,6 +140,19 @@ export const EditPermissionsModal = ({
                                                 className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
                                             >
                                                 {departments.map(d => <option key={d.id} value={d.id} className="dark:bg-slate-900">{d.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 text-xs">Squad (Team)</label>
+                                            <select
+                                                value={editData.teamId}
+                                                onChange={(e) => setEditData({ ...editData, teamId: e.target.value })}
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                            >
+                                                <option value="" className="dark:bg-slate-900">No Squad Assigned</option>
+                                                {teams.filter(t => t.department_id === editData.departmentId).map(t => (
+                                                    <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="space-y-2">

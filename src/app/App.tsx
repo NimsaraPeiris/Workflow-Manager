@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import DashboardPage from '../pages/dashboard';
 import TaskDetailsPage from '../pages/taskDetails';
 import AuditLogsPage from '../pages/admin/AuditLogs';
+import TeamsManagementPage from '../pages/admin/TeamsManagement';
 import UserManagementPage from '../pages/admin/UserManagement';
 import { supabase } from '../lib/supabaseClient';
 import { Sidebar } from '../components/Sidebar';
@@ -35,7 +36,7 @@ function AppContent() {
     const [cancelledCount, setCancelledCount] = useState(0);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled'>('dashboard');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [loadingError, setLoadingError] = useState<string | null>(null);
 
@@ -182,7 +183,8 @@ function AppContent() {
             approved: 'Approved History',
             cancelled: 'Cancelled Log',
             audit: 'System Audit',
-            users: 'User Management'
+            users: 'Departments & Permissions',
+            teams: 'Teams'
         };
 
         document.title = `${viewTitles[currentView] || 'Overview'} | Workflow Manager`;
@@ -334,7 +336,7 @@ function AppContent() {
                 approvedCount={approvedCount}
                 cancelledCount={cancelledCount}
                 currentView={currentView}
-                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled') => {
+                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled') => {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
                     setSelectedTaskId(null); // Exit task details when switching views
@@ -346,6 +348,8 @@ function AppContent() {
                 <div className="max-w-7xl mx-auto py-8 px-4 sm:px-8 lg:px-12">
                     {currentView === 'users' ? (
                         <UserManagementPage currentUser={user} />
+                    ) : currentView === 'teams' ? (
+                        <TeamsManagementPage currentUser={user} />
                     ) : currentView === 'audit' ? (
                         <AuditLogsPage />
                     ) : selectedTaskId ? (

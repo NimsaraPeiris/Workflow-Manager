@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Loader2, Trash2, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Loader2, Trash2, Calendar, Play, Pause, Clock as ClockIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SubTask } from '../../types';
 
@@ -8,9 +8,98 @@ interface SubTaskSectionProps {
     onToggle: (id: string, isCompleted: boolean) => Promise<void>;
     onCreate: (title: string, dueDate?: string) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    onTimerToggle: (id: string, isStarting: boolean) => Promise<void>;
 }
 
-export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTaskSectionProps) => {
+const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling }: { st: SubTask, onToggle: any, onDelete: any, onTimerToggle: any, toggling: string | null }) => {
+    const [elapsed, setElapsed] = useState(st.total_time_spent || 0);
+
+    useEffect(() => {
+        let interval: any;
+        if (st.timer_started_at) {
+            const start = new Date(st.timer_started_at).getTime();
+            const tick = () => {
+                const now = new Date().getTime();
+                setElapsed((st.total_time_spent || 0) + Math.floor((now - start) / 1000));
+            };
+            tick();
+            interval = setInterval(tick, 1000);
+        } else {
+            setElapsed(st.total_time_spent || 0);
+        }
+        return () => clearInterval(interval);
+    }, [st.timer_started_at, st.total_time_spent]);
+
+    const formatMiniTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className={`flex items-center gap-4 p-4 border rounded-none transition-all ${st.is_completed ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}
+        >
+            <button
+                onClick={() => onToggle(st.id, !st.is_completed)}
+                disabled={toggling === st.id}
+                className={`w-6 h-6 rounded-none border flex items-center justify-center transition-all ${st.is_completed ? 'bg-orange-600 border-orange-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-500'}`}
+            >
+                {toggling === st.id ? (
+                    <Loader2 className="animate-spin" size={12} />
+                ) : st.is_completed && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                )}
+            </button>
+
+            <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold truncate transition-all ${st.is_completed ? 'text-slate-400 dark:text-slate-600 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
+                    {st.title}
+                </p>
+                <div className="flex items-center gap-3 mt-1">
+                    {st.due_date && (
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500 font-bold whitespace-nowrap">
+                            <Calendar size={10} />
+                            <span className="uppercase tracking-tighter">{new Date(st.due_date).toLocaleDateString()}</span>
+                        </div>
+                    )}
+                    {(elapsed > 0 || st.timer_started_at) && (
+                        <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${st.timer_started_at ? 'text-orange-600' : 'text-slate-400'}`}>
+                            <ClockIcon size={10} className={st.timer_started_at ? 'animate-spin-slow' : ''} />
+                            <span>{formatMiniTime(elapsed)}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+                {!st.is_completed && (
+                    <button
+                        onClick={() => onTimerToggle(st.id, !st.timer_started_at)}
+                        className={`p-2 transition-all ${st.timer_started_at ? 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' : 'text-slate-400 hover:text-orange-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        title={st.timer_started_at ? "Pause Timer" : "Start Timer"}
+                    >
+                        {st.timer_started_at ? <Pause size={16} /> : <Play size={16} />}
+                    </button>
+                )}
+                <button
+                    onClick={() => onDelete(st.id)}
+                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-none transition-all active:scale-90"
+                >
+                    <Trash2 size={16} />
+                </button>
+            </div>
+        </motion.div>
+    );
+};
+
+export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete, onTimerToggle }: SubTaskSectionProps) => {
     const [newTitle, setNewTitle] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -27,6 +116,15 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
             setDueDate('');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleToggle = async (id: string, isCompleted: boolean) => {
+        setToggling(id);
+        try {
+            await onToggle(id, isCompleted);
+        } finally {
+            setToggling(null);
         }
     };
 
@@ -65,49 +163,14 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete }: SubTa
             <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                     {subTasks.map(st => (
-                        <motion.div
+                        <SubTaskRow
                             key={st.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className={`flex items-center gap-4 p-4 border rounded-none transition-all ${st.is_completed ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}
-                        >
-                            <button
-                                onClick={() => {
-                                    setToggling(st.id);
-                                    onToggle(st.id, !st.is_completed).finally(() => setToggling(null));
-                                }}
-                                disabled={toggling === st.id}
-                                className={`w-6 h-6 rounded-none border flex items-center justify-center transition-all ${st.is_completed ? 'bg-orange-600 border-orange-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-500'}`}
-                            >
-                                {toggling === st.id ? (
-                                    <Loader2 className="animate-spin" size={12} />
-                                ) : st.is_completed && (
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                )}
-                            </button>
-
-                            <div className="flex-1">
-                                <p className={`text-sm font-bold transition-all ${st.is_completed ? 'text-slate-400 dark:text-slate-600 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
-                                    {st.title}
-                                </p>
-                                {st.due_date && (
-                                    <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400 dark:text-slate-500 font-bold">
-                                        <Calendar size={10} />
-                                        <span className="uppercase tracking-tighter">Due: {new Date(st.due_date).toLocaleDateString()}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                onClick={() => onDelete(st.id)}
-                                className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-none transition-all active:scale-90"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        </motion.div>
+                            st={st}
+                            onToggle={handleToggle}
+                            onDelete={onDelete}
+                            onTimerToggle={onTimerToggle}
+                            toggling={toggling}
+                        />
                     ))}
                 </AnimatePresence>
 

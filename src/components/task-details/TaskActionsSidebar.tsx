@@ -57,16 +57,19 @@ export const TaskActionsSidebar = ({
                 {/* Assign / Reassign */}
                 <PermissionGuard permission="task:assign">
                     {currentUser.user_metadata?.department_id === task.department_id && (task.status === 'ACCEPTED' || task.status === 'CREATED' || task.status === 'ASSIGNED') && (
-                        <Button onClick={() => onShowAssignModal()} variant="secondary" className="w-full h-12 text-sm font-bold dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 active:scale-95 transition-all">{task.assignee_id ? 'Reassign' : 'Assign'}</Button>
+                        <Button onClick={() => onShowAssignModal()} variant="primary" className="w-full h-12 text-sm font-bold dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 active:scale-95 transition-all">{task.assignee_id ? 'Reassign' : 'Assign'}</Button>
                     )}
                 </PermissionGuard>
 
                 {/* Employee Self-Actions */}
-                {currentUser.id === task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED') && (
-                    <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">Start Working</Button>
+                {currentUser.id === task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'PAUSED') && (
+                    <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">{task.status === 'PAUSED' ? 'Resume Working' : 'Start Working'}</Button>
                 )}
                 {currentUser.id === task.assignee_id && task.status === 'IN_PROGRESS' && (
-                    <Button onClick={() => onUpdateStatus('SUBMITTED')} loading={updating} className="w-full h-12 text-sm font-bold active:scale-95">Submit</Button>
+                    <div className="flex flex-col gap-3">
+                        <Button onClick={() => onUpdateStatus('SUBMITTED')} loading={updating} className="w-full h-12 text-sm font-bold active:scale-95">Submit</Button>
+                        <Button onClick={() => onUpdateStatus('PAUSED')} variant="outline" loading={updating} className="w-full h-12 text-sm font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/40 dark:text-orange-400 active:scale-95 transition-all">Do Later</Button>
+                    </div>
                 )}
 
                 {/* Approve / Reject */}

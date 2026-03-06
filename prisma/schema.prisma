@@ -12,18 +12,21 @@ model Profile {
   id             String         @id @db.Uuid
   full_name      String?
   department_id  String?        @db.Uuid
-  role           user_role?     @default(USER)
-  role_id        String?        @db.Uuid
-  role_ref       Role?          @relation(fields: [role_id], references: [id])
-  permissions    Json           @default("[]")
+  role           String?        @default("USER")
   updated_at     DateTime?      @default(now()) @db.Timestamptz(6)
+  permissions    String[]       @default([])
+  role_id        String?        @db.Uuid
+  email          String?
+  auditLogs      AuditLog[]
   comments       Comment[]
   department     Department?    @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user           auth_users     @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  role_ref       Role?          @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   activities     TaskActivity[]
   tasks_assigned Task[]         @relation("AssignedTasks")
   tasks_created  Task[]         @relation("CreatedTasks")
-  auditLogs      AuditLog[]
+  team_id        String?        @db.Uuid
+  team           Team?          @relation(fields: [team_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@map("profiles")
   @@schema("public")
@@ -32,7 +35,7 @@ model Profile {
 model Role {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String    @unique
-  permissions Json      @default("[]")
+  permissions String[]  @default([])
   created_at  DateTime? @default(now()) @db.Timestamptz(6)
   profiles    Profile[]
 
@@ -41,35 +44,41 @@ model Role {
 }
 
 model Department {
-  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String       @unique
-  created_at DateTime?    @default(now()) @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String    @unique
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
   profiles   Profile[]
   tasks      Task[]
-  users      PublicUser[]
+  teams      Team[]
 
   @@map("departments")
   @@schema("public")
 }
 
 model Task {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title         String
-  description   String?
-  status        task_status?   @default(CREATED)
-  priority      task_priority? @default(MEDIUM)
-  creator_id    String?        @db.Uuid
-  assignee_id   String?        @db.Uuid
-  department_id String?        @db.Uuid
-  due_date      DateTime?      @db.Timestamptz(6)
-  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
-  comments      Comment[]
-  activities    TaskActivity[]
-  sub_tasks     SubTask[]
-  assignee      Profile?       @relation("AssignedTasks", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  creator       Profile?       @relation("CreatedTasks", fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  department    Department?    @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title            String
+  description      String?
+  status           task_status?   @default(CREATED)
+  priority         String?        @default("MEDIUM")
+  creator_id       String?        @db.Uuid
+  assignee_id      String?        @db.Uuid
+  department_id    String?        @db.Uuid
+  due_date         DateTime?      @db.Timestamptz(6)
+  created_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  start_date       DateTime?      @db.Timestamptz(6)
+  end_date         DateTime?      @db.Timestamptz(6)
+  comments         Comment[]
+  sub_tasks        SubTask[]
+  activities       TaskActivity[]
+  total_time_spent Int            @default(0)
+  timer_started_at DateTime?      @db.Timestamptz(6)
+  assignee         Profile?       @relation("AssignedTasks", fields: [assignee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator          Profile?       @relation("CreatedTasks", fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  department       Department?    @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  team_id          String?        @db.Uuid
+  team             Team?          @relation(fields: [team_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([creator_id], map: "idx_tasks_creator")
   @@index([department_id], map: "idx_tasks_department")
@@ -79,16 +88,31 @@ model Task {
 }
 
 model SubTask {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  task_id      String    @db.Uuid
-  title        String
-  is_completed Boolean   @default(false)
-  due_date     DateTime? @db.Timestamptz(6)
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
-  task         Task      @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  task_id          String    @db.Uuid
+  title            String
+  is_completed     Boolean   @default(false)
+  due_date         DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+  total_time_spent Int       @default(0)
+  timer_started_at DateTime? @db.Timestamptz(6)
+  task             Task      @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("sub_tasks")
+  @@schema("public")
+}
+
+model Team {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  department_id String     @db.Uuid
+  created_at    DateTime?  @default(now()) @db.Timestamptz(6)
+  department    Department @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles      Profile[]
+  tasks         Task[]
+
+  @@map("teams")
   @@schema("public")
 }
 
@@ -121,7 +145,7 @@ model AuditLog {
   old_data    Json?
   new_data    Json?
   created_at  DateTime @default(now()) @db.Timestamptz(6)
-  profile     Profile? @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  profile     Profile? @relation(fields: [user_id], references: [id], onUpdate: NoAction)
 
   @@map("audit_logs")
   @@schema("public")
@@ -555,19 +579,45 @@ model Comment {
   @@schema("public")
 }
 
-model PublicUser {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String      @unique
-  password      String
-  full_name     String?
-  role          user_role?  @default(USER)
-  department_id String?     @db.Uuid
-  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime?   @default(now()) @db.Timestamptz(6)
-  department    Department? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model custom_oauth_providers {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_type         String
+  identifier            String    @unique
+  name                  String
+  client_id             String
+  client_secret         String
+  acceptable_client_ids String[]  @default([])
+  scopes                String[]  @default([])
+  pkce_enabled          Boolean   @default(true)
+  attribute_mapping     Json      @default("{}")
+  authorization_params  Json      @default("{}")
+  enabled               Boolean   @default(true)
+  email_optional        Boolean   @default(false)
+  issuer                String?
+  discovery_url         String?
+  skip_nonce_check      Boolean   @default(false)
+  cached_discovery      Json?
+  discovery_cached_at   DateTime? @db.Timestamptz(6)
+  authorization_url     String?
+  token_url             String?
+  userinfo_url          String?
+  jwks_uri              String?
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
 
-  @@index([email], map: "idx_users_email")
-  @@map("users")
+  @@index([created_at])
+  @@index([enabled])
+  @@index([identifier])
+  @@index([provider_type])
+  @@schema("auth")
+}
+
+model permission_registry {
+  key      String @id
+  label    String
+  category String
+
   @@schema("public")
 }
 
@@ -659,6 +709,7 @@ enum task_status {
   REJECTED
   CANCELLED
   CANCEL_REQUESTED
+  PAUSED
 
   @@schema("public")
 }
@@ -667,8 +718,6 @@ enum user_role {
   REQUESTER_HEAD
   RECEIVING_HEAD
   ASSIGNEE
-  USER
-  ADMIN
 
   @@schema("public")
 }

@@ -23,8 +23,8 @@ interface SidebarProps {
     cancelledCount?: number;
     isOpen: boolean;
     onClose: () => void;
-    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled') => void;
-    currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled';
+    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled') => void;
+    currentView: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled';
 }
 
 
@@ -62,16 +62,24 @@ export const Sidebar = ({
     const adminItems = [
         {
             id: 'users',
-            label: 'Teams & Permissions',
-            icon: Users,
+            label: 'Departments & Permissions',
+            icon: ShieldCheck,
             active: currentView === 'users',
             onClick: () => onViewChange('users'),
             permission: 'user:view' as const
         },
         {
+            id: 'teams',
+            label: 'Teams',
+            icon: Users,
+            active: currentView === 'teams',
+            onClick: () => onViewChange('teams'),
+            permission: 'user:view' as const
+        },
+        {
             id: 'audit',
             label: 'Security Logs',
-            icon: ShieldCheck,
+            icon: AlertCircle,
             active: currentView === 'audit',
             onClick: () => onViewChange('audit'),
             permission: 'audit:view' as const

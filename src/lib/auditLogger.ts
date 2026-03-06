@@ -15,7 +15,10 @@ export type AuditAction =
     | 'ROLE_CHANGE'
     | 'USER_CREATE'
     | 'USER_UPDATE'
-    | 'PERMISSION_CHANGE';
+    | 'PERMISSION_CHANGE'
+    | 'TEAM_CREATE'
+    | 'TEAM_UPDATE'
+    | 'TEAM_DELETE';
 
 /**
  * Utility to log sensitive system actions for auditing purposes.
@@ -25,7 +28,7 @@ export const auditLogger = {
     async log(params: {
         userId: string | null;
         action: AuditAction;
-        entityType: 'Profile' | 'Task' | 'Department' | 'System';
+        entityType: 'Profile' | 'Task' | 'Department' | 'Team' | 'System';
         entityId?: string;
         oldData?: any;
         newData?: any;
