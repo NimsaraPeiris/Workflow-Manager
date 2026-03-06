@@ -14,6 +14,7 @@ interface CreateTaskModalProps {
         due_date: string;
         department_id: string;
         assignee_id: string;
+        team_id: string;
     };
     setNewTask: React.Dispatch<React.SetStateAction<{
         title: string;
@@ -22,9 +23,11 @@ interface CreateTaskModalProps {
         due_date: string;
         department_id: string;
         assignee_id: string;
+        team_id: string;
     }>>;
     departments: any[];
     employees: any[];
+    teams: any[];
     currentUser: any;
 }
 
@@ -38,11 +41,14 @@ export const CreateTaskModal = ({
     setNewTask,
     departments,
     employees,
+    teams,
     currentUser
 }: CreateTaskModalProps) => {
-    const userRole = currentUser?.user_metadata?.role;
-    const userDeptId = currentUser?.user_metadata?.department_id;
-    const isRestricted = !!(userRole !== 'SUPER_ADMIN' && newTask.department_id && newTask.department_id !== userDeptId);
+    const appRole = (currentUser?.role && currentUser?.role !== 'authenticated')
+        ? currentUser.role
+        : currentUser?.user_metadata?.role;
+    const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
+    const isRestricted = !!(appRole !== 'SUPER_ADMIN' && newTask.department_id && newTask.department_id !== userDeptId);
 
     return (
         <AnimatePresence>
@@ -121,29 +127,59 @@ export const CreateTaskModal = ({
                                     </select>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1 leading-none">Assign To (Employee)</label>
-                                    <div className="relative">
+                                <div className="space-y-4 pt-2 border-t border-slate-50 dark:border-slate-800">
+                                    <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Tactical Assignment</h4>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1 leading-none">Assign to Squad (Team)</label>
                                         <select
-                                            value={newTask.assignee_id}
-                                            onChange={(e) => setNewTask({ ...newTask, assignee_id: e.target.value })}
-                                            disabled={isRestricted}
-                                            className={`w-full px-5 py-3.5 border border-slate-200 dark:border-slate-700 rounded-none focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 outline-none transition-all appearance-none font-bold ${isRestricted ? 'bg-slate-100 dark:bg-slate-800/20 cursor-not-allowed text-slate-400 dark:text-slate-600' : 'bg-slate-50 dark:bg-slate-800/40 dark:text-white cursor-pointer'}`}
+                                            value={newTask.team_id}
+                                            onChange={(e) => {
+                                                setNewTask({ ...newTask, team_id: e.target.value, assignee_id: '' });
+                                            }}
+                                            className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-none focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 dark:text-white outline-none transition-all appearance-none cursor-pointer font-bold"
                                         >
-                                            <option value="" className="dark:bg-slate-900">{isRestricted ? 'Restricted: Target Head will assign' : 'Select Employee'}</option>
-                                            {employees.map(emp => (
-                                                <option key={emp.id} value={emp.id} className="dark:bg-slate-900">
-                                                    {emp.full_name} ({emp.departments?.name || 'No Dept'})
-                                                </option>
-                                            ))}
+                                            <option value="" className="dark:bg-slate-900">Individual Assignment Only</option>
+                                            {departments.map(dept => {
+                                                const deptTeams = teams.filter(t => t.department_id === dept.id);
+                                                if (deptTeams.length === 0) return null;
+                                                return (
+                                                    <optgroup key={dept.id} label={dept.name} className="dark:bg-slate-900">
+                                                        {deptTeams.map(t => (
+                                                            <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                );
+                                            })}
                                         </select>
-                                        {isRestricted && (
-                                            <div className="mt-2.5 flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-900/30 rounded-none text-[10px] text-orange-800 dark:text-orange-300 font-bold leading-relaxed animate-in fade-in slide-in-from-top-2 duration-500 transition-colors">
-                                                <AlertCircle className="shrink-0 mt-0.5" size={14} />
-                                                <span>Restricted to your department employees. Target head will manage remote assignment.</span>
-                                            </div>
-                                        )}
                                     </div>
+
+                                    {!newTask.team_id && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1 leading-none">Assign to Individual</label>
+                                            <div className="relative">
+                                                <select
+                                                    value={newTask.assignee_id}
+                                                    onChange={(e) => setNewTask({ ...newTask, assignee_id: e.target.value })}
+                                                    disabled={isRestricted}
+                                                    className={`w-full px-5 py-3.5 border border-slate-200 dark:border-slate-700 rounded-none focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 outline-none transition-all appearance-none font-bold ${isRestricted ? 'bg-slate-100 dark:bg-slate-800/20 cursor-not-allowed text-slate-400 dark:text-slate-600' : 'bg-slate-50 dark:bg-slate-800/40 dark:text-white cursor-pointer'}`}
+                                                >
+                                                    <option value="" className="dark:bg-slate-900">{isRestricted ? 'Restricted: Target Head will assign' : 'Select Employee'}</option>
+                                                    {employees.map(emp => (
+                                                        <option key={emp.id} value={emp.id} className="dark:bg-slate-900">
+                                                            {emp.full_name} ({emp.departments?.name || 'No Dept'})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {isRestricted && (
+                                                    <div className="mt-2.5 flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-900/30 rounded-none text-[10px] text-orange-800 dark:text-orange-300 font-bold leading-relaxed animate-in fade-in slide-in-from-top-2 duration-500 transition-colors">
+                                                        <AlertCircle className="shrink-0 mt-0.5" size={14} />
+                                                        <span>Restricted to your department employees. Target head will manage remote assignment.</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">

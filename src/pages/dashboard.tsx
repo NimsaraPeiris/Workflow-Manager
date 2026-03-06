@@ -12,12 +12,21 @@ interface DashboardPageProps {
     onTaskClick: (taskId: string) => void;
     currentUser: any;
     filterDeptId: string | null;
+    filterTeamId: string | null;
     onDeptSelect: (deptId: string | null) => void;
     onRefreshStats: () => void;
     currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled';
 }
 
-export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, onDeptSelect, onRefreshStats, currentView }: DashboardPageProps) {
+export default function DashboardPage({
+    onTaskClick,
+    currentUser,
+    filterDeptId,
+    filterTeamId,
+    onDeptSelect,
+    onRefreshStats,
+    currentView
+}: DashboardPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,30 +41,35 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
         priority: 'MEDIUM',
         due_date: '',
         department_id: '',
-        assignee_id: ''
+        assignee_id: '',
+        team_id: ''
     });
     const [departments, setDepartments] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
+    const [teams, setTeams] = useState<any[]>([]);
 
     useEffect(() => {
         if (currentUser) {
             fetchTasks();
             fetchDepartments();
             fetchEmployees();
+            fetchTeams();
         }
-    }, [currentUser?.id, currentUser?.permissions?.length, currentUser?.role, newTask.department_id, filterDeptId, currentView]);
+    }, [currentUser?.id, currentUser?.permissions?.length, currentUser?.role, currentUser?.team_id, currentUser?.department_id, newTask.department_id, filterDeptId, filterTeamId, currentView]);
 
     const fetchEmployees = async () => {
-        const userRole = currentUser?.role || currentUser?.user_metadata?.role;
+        let query = supabase.from('profiles').select('*, departments(name)');
+        const appRole = (currentUser?.role && currentUser?.role !== 'authenticated')
+            ? currentUser.role
+            : currentUser?.user_metadata?.role;
         const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
-        let query = supabase.from('profiles').select('*, departments(name)');
         query = query.eq('role', 'EMPLOYEE');
 
         // Only allow direct assignment if:
         // 1. User is SUPER_ADMIN
         // 2. User is HEAD and the target department is THEIR department
-        if (userRole !== 'SUPER_ADMIN') {
+        if (appRole !== 'SUPER_ADMIN') {
             if (newTask.department_id && newTask.department_id !== userDeptId) {
                 setEmployees([]); // Cannot assign to other department's employees directly
                 return;
@@ -79,39 +93,52 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
         if (data) setDepartments(data);
     };
 
+    const fetchTeams = async () => {
+        const { data } = await supabase.from('teams').select('*, departments(name)').order('name');
+        if (data) setTeams(data);
+    };
+
     const fetchTasks = async () => {
         if (!currentUser) return;
         setLoading(true);
 
         try {
-            const canViewAll = hasPermission(currentUser, 'task:view');
-            const canViewDept = hasPermission(currentUser, 'task:view_dept');
+            const appRole = (currentUser?.role && currentUser?.role !== 'authenticated')
+                ? currentUser.role
+                : currentUser?.user_metadata?.role;
+            const canViewAll = appRole === 'SUPER_ADMIN';
+            const canViewDept = appRole === 'DEP_HEAD' || appRole === 'HEAD' || hasPermission(currentUser, 'task:view_dept');
             const deptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
             let query = supabase.from('tasks').select(`
                 *,
                 creator:profiles!tasks_creator_id_fkey(full_name),
                 assignee:profiles!tasks_assignee_id_fkey(full_name),
-                department:departments(name)
+                department:departments(name),
+                team:teams(name)
             `);
 
+            // Apply visibility filters if not a global viewer
             if (!canViewAll) {
+                const teamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
                 if (canViewDept && deptId) {
-                    // View all in my department OR tasks I created
-                    if (currentView === 'dashboard') {
-                        query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
-                    }
-                } else {
-                    // Employee/Strict view: only tasks assigned to me OR created by me
-                    if (currentView === 'dashboard') {
-                        query = query.or(`assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`);
-                    }
+                    // Head: View all in department OR tasks I created OR tasks for my team
+                    let filter = `department_id.eq.${deptId},creator_id.eq.${currentUser.id}`;
+                    if (teamId) filter += `,team_id.eq.${teamId}`;
+                    query = query.or(filter);
+                } else if (currentUser.id) {
+                    // Employee: View tasks assigned to me, created by me, or ANY in my department
+                    let filter = `assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`;
+                    if (deptId) filter += `,department_id.eq.${deptId}`;
+                    if (teamId) filter += `,team_id.eq.${teamId}`;
+                    query = query.or(filter);
                 }
             }
-            // If canViewAll is true, no filters applied -> sees everything.
 
-            if (filterDeptId === 'EXTERNAL') {
-                // Tasks created by me but NOT in my department
+            // Apply secondary filters (sidebar selection)
+            if (filterTeamId) {
+                query = query.eq('team_id', filterTeamId);
+            } else if (filterDeptId === 'EXTERNAL') {
                 query = query.eq('creator_id', currentUser.id).neq('department_id', deptId);
             } else if (filterDeptId) {
                 query = query.eq('department_id', filterDeptId);
@@ -167,8 +194,9 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                     due_date: newTask.due_date || null,
                     department_id: newTask.department_id || null,
                     assignee_id: newTask.assignee_id || null,
+                    team_id: newTask.team_id || null,
                     creator_id: user.id,
-                    status: newTask.assignee_id ? 'ASSIGNED' : 'CREATED'
+                    status: (newTask.assignee_id || newTask.team_id) ? 'ASSIGNED' : 'CREATED'
                 }
             ])
             .select();
@@ -184,7 +212,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 newData: newTask
             });
             setIsModalOpen(false);
-            setNewTask({ title: '', description: '', priority: 'MEDIUM', due_date: '', department_id: '', assignee_id: '' });
+            setNewTask({ title: '', description: '', priority: 'MEDIUM', due_date: '', department_id: '', assignee_id: '', team_id: '' });
             fetchTasks();
             onRefreshStats();
         }
@@ -228,6 +256,8 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 currentView={currentView}
                 departments={departments}
                 filterDeptId={filterDeptId}
+                filterTeamId={filterTeamId}
+                teams={teams}
                 onDeptSelect={onDeptSelect}
             />
 
@@ -321,6 +351,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 setNewTask={setNewTask}
                 departments={departments}
                 employees={employees}
+                teams={teams}
                 currentUser={currentUser}
             />
         </div>

@@ -10,6 +10,8 @@ interface TaskHeaderProps {
     currentView: string;
     departments?: any[];
     filterDeptId?: string | null;
+    filterTeamId?: string | null;
+    teams?: any[];
     onDeptSelect?: (deptId: string | null) => void;
 }
 
@@ -22,13 +24,23 @@ export const TaskHeader = ({
     currentView,
     departments = [],
     filterDeptId,
+    filterTeamId,
+    teams = [],
     onDeptSelect
 }: TaskHeaderProps) => {
     const isHistory = currentView === 'approved' || currentView === 'cancelled';
-    const title = currentView === 'approved' ? 'Approved History' :
-        currentView === 'cancelled' ? 'Cancelled Log' :
-            'Workflow Management';
-    const subtitle = isHistory ? `Track organizational ${currentView} records` : "Manage and track your team's progress";
+    const selectedTeam = filterTeamId ? teams.find(t => t.id === filterTeamId) : null;
+    const selectedDept = filterDeptId && filterDeptId !== 'EXTERNAL' ? departments.find(d => d.id === filterDeptId) : null;
+
+    const title = isHistory ? (currentView === 'approved' ? 'Approved History' : 'Cancelled Log') :
+        selectedTeam ? `${selectedTeam.name} Squad` :
+            selectedDept ? `${selectedDept.name} Workflow` :
+                filterDeptId === 'EXTERNAL' ? 'Cross-Dept Requests' :
+                    'Workflow Management';
+
+    const subtitle = selectedTeam ? `Strategic operations for the ${selectedTeam.name} unit` :
+        isHistory ? `Track organizational ${currentView} records` :
+            "Manage and track your team's progress";
 
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">

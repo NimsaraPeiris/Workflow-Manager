@@ -160,9 +160,17 @@ export const CreateUserModal = ({
                                                 className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-orange-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
                                             >
                                                 <option value="" className="dark:bg-slate-900">No Squad Assigned</option>
-                                                {teams.filter(t => t.department_id === newUser.departmentId).map(t => (
-                                                    <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>
-                                                ))}
+                                                {departments.map(dept => {
+                                                    const deptTeams = teams.filter(t => t.department_id === dept.id);
+                                                    if (deptTeams.length === 0) return null;
+                                                    return (
+                                                        <optgroup key={dept.id} label={dept.name} className="dark:bg-slate-900">
+                                                            {deptTeams.map(t => (
+                                                                <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    );
+                                                })}
                                             </select>
                                         </div>
                                         <div className="space-y-2 md:col-span-2 lg:col-span-1">

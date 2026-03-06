@@ -25,6 +25,9 @@ interface SidebarProps {
     onClose: () => void;
     onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled') => void;
     currentView: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled';
+    selectedTeamId: string | null;
+    onTeamSelect: (id: string | null) => void;
+    userTeams: any[];
 }
 
 
@@ -40,7 +43,10 @@ export const Sidebar = ({
     isOpen,
     onClose,
     onViewChange,
-    currentView
+    currentView,
+    selectedTeamId,
+    onTeamSelect,
+    userTeams
 }: SidebarProps) => {
     const { theme, toggleTheme } = useTheme();
     const isOverview = currentView === 'dashboard' && !selectedDeptId;
@@ -229,45 +235,77 @@ export const Sidebar = ({
                             ))}
                         </div>
 
-                        {/* Workflow Hub / Departments */}
-                        <div className="space-y-1 pt-2">
-                            <div className="flex items-center justify-between px-3 mb-2">
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em]">Workflows</p>
-                                <Building2 size={12} className="text-slate-300 dark:text-orange-500" />
+                        {/* Squads / Teams */}
+                        {userTeams.length > 0 && (
+                            <div className="space-y-1 pt-2">
+                                <div className="flex items-center justify-between px-3 mb-2">
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em]">Assigned Teams</p>
+                                    <Users size={12} className="text-slate-300 dark:text-orange-500" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    {userTeams.map(team => (
+                                        <button
+                                            key={team.id}
+                                            onClick={() => {
+                                                onTeamSelect(team.id);
+                                                onClose();
+                                            }}
+                                            className={`
+                                                w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group
+                                                ${selectedTeamId === team.id
+                                                    ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-bold border border-orange-100 dark:border-orange-500/20'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-100 dark:hover:border-slate-800'}
+                                            `}
+                                        >
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className={`w-2 h-2 rounded-full shadow-inner transition-colors ${selectedTeamId === team.id ? 'bg-orange-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
+                                                <span className="text-xs truncate tracking-tight">{team.name}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="space-y-0.5">
-                                {departments.map((dept) => (
-                                    <button
-                                        key={dept.id}
-                                        onClick={() => {
-                                            onDeptSelect(dept.id);
-                                            onViewChange('dashboard');
-                                            onClose();
-                                        }}
-                                        className={`
-                                            w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group
-                                            ${selectedDeptId === dept.id && currentView === 'dashboard'
-                                                ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-bold border border-orange-100 dark:border-orange-500/20'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-100 dark:hover:border-slate-800'}
-                                        `}
-                                    >
-                                        <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className={`w-2 h-2 rounded-full shadow-inner transition-colors ${selectedDeptId === dept.id ? 'bg-orange-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
-                                            <span className="text-xs truncate tracking-tight">{dept.name}</span>
-                                        </div>
-                                        {taskCounts[dept.id] > 0 && (
-                                            <span className={`
-                                                text-[10px] min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold rounded-lg
-                                                ${selectedDeptId === dept.id ? 'bg-orange-200/50 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}
-                                            `}>
-                                                {taskCounts[dept.id]}
-                                            </span>
-                                        )}
-                                    </button>
-                                ))}
+                        )}
 
-                                {/* External Tasks for Heads */}
-                                <PermissionGuard permission="task:view_dept">
+                        {/* Workflow Hub / Departments */}
+                        <PermissionGuard permission="task:view_dept">
+                            <div className="space-y-1 pt-2">
+                                <div className="flex items-center justify-between px-3 mb-2">
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em]">Workflows</p>
+                                    <Building2 size={12} className="text-slate-300 dark:text-orange-500" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    {departments.map((dept) => (
+                                        <button
+                                            key={dept.id}
+                                            onClick={() => {
+                                                onDeptSelect(dept.id);
+                                                onViewChange('dashboard');
+                                                onClose();
+                                            }}
+                                            className={`
+                                                w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group
+                                                ${selectedDeptId === dept.id && currentView === 'dashboard'
+                                                    ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 font-bold border border-orange-100 dark:border-orange-500/20'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-100 dark:hover:border-slate-800'}
+                                            `}
+                                        >
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className={`w-2 h-2 rounded-full shadow-inner transition-colors ${selectedDeptId === dept.id ? 'bg-orange-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
+                                                <span className="text-xs truncate tracking-tight">{dept.name}</span>
+                                            </div>
+                                            {taskCounts[dept.id] > 0 && (
+                                                <span className={`
+                                                    text-[10px] min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold rounded-lg
+                                                    ${selectedDeptId === dept.id ? 'bg-orange-200/50 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}
+                                                `}>
+                                                    {taskCounts[dept.id]}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+
+                                    {/* External Tasks for Heads - Logic moved into this block */}
                                     <button
                                         onClick={() => {
                                             onDeptSelect('EXTERNAL');
@@ -294,9 +332,9 @@ export const Sidebar = ({
                                             </span>
                                         )}
                                     </button>
-                                </PermissionGuard>
+                                </div>
                             </div>
-                        </div>
+                        </PermissionGuard>
                     </div>
 
                     {/* Footer / App Badge */}

@@ -94,6 +94,8 @@ export interface SubTask {
     updated_at: string;
     total_time_spent: number;
     timer_started_at?: string;
+    assignee_id?: string;
+    assignee?: { full_name: string };
 }
 
 export interface Comment {

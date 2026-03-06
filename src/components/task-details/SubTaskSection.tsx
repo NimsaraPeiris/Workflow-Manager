@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Plus, Loader2, Trash2, Calendar, Play, Pause, Clock as ClockIcon } from 'lucide-react';
+import { Plus, Loader2, Trash2, Calendar, Play, Pause, Clock as ClockIcon, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SubTask } from '../../types';
 
 interface SubTaskSectionProps {
     subTasks: SubTask[];
     onToggle: (id: string, isCompleted: boolean) => Promise<void>;
-    onCreate: (title: string, dueDate?: string) => Promise<void>;
+    onCreate: (title: string, dueDate?: string, assigneeId?: string) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
     onTimerToggle: (id: string, isStarting: boolean) => Promise<void>;
+    teamMembers: any[];
+    canCreate: boolean;
+    currentUserId?: string;
 }
 
-const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling }: { st: SubTask, onToggle: any, onDelete: any, onTimerToggle: any, toggling: string | null }) => {
+const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling, canCreate, currentUserId }: { st: SubTask, onToggle: any, onDelete: any, onTimerToggle: any, toggling: string | null, canCreate: boolean, currentUserId?: string }) => {
+    const isMine = st.assignee_id === currentUserId;
+    const isAssigned = !!st.assignee_id;
     const [elapsed, setElapsed] = useState(st.total_time_spent || 0);
 
     useEffect(() => {
@@ -42,7 +47,14 @@ const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling }: { st: S
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`flex items-center gap-4 p-4 border rounded-none transition-all ${st.is_completed ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}
+            className={`flex items-center gap-4 p-4 border rounded-none transition-all ${st.is_completed
+                    ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75'
+                    : isMine
+                        ? 'bg-indigo-50/10 border-indigo-200 dark:border-indigo-500/30'
+                        : isAssigned
+                            ? 'bg-orange-50/10 border-orange-100 dark:border-orange-500/30'
+                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
+                } shadow-sm`}
         >
             <button
                 onClick={() => onToggle(st.id, !st.is_completed)}
@@ -69,6 +81,12 @@ const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling }: { st: S
                             <span className="uppercase tracking-tighter">{new Date(st.due_date).toLocaleDateString()}</span>
                         </div>
                     )}
+                    {st.assignee && (
+                        <div className="flex items-center gap-1 text-[10px] text-orange-600 dark:text-orange-500 font-bold whitespace-nowrap">
+                            <UserIcon size={10} />
+                            <span className="uppercase tracking-tighter">{st.assignee.full_name}</span>
+                        </div>
+                    )}
                     {(elapsed > 0 || st.timer_started_at) && (
                         <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${st.timer_started_at ? 'text-orange-600' : 'text-slate-400'}`}>
                             <ClockIcon size={10} className={st.timer_started_at ? 'animate-spin-slow' : ''} />
@@ -88,20 +106,23 @@ const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling }: { st: S
                         {st.timer_started_at ? <Pause size={16} /> : <Play size={16} />}
                     </button>
                 )}
-                <button
-                    onClick={() => onDelete(st.id)}
-                    className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-none transition-all active:scale-90"
-                >
-                    <Trash2 size={16} />
-                </button>
+                {canCreate && (
+                    <button
+                        onClick={() => onDelete(st.id)}
+                        className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-none transition-all active:scale-90"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
             </div>
-        </motion.div>
+        </motion.div >
     );
 };
 
-export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete, onTimerToggle }: SubTaskSectionProps) => {
+export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete, onTimerToggle, teamMembers, canCreate, currentUserId }: SubTaskSectionProps) => {
     const [newTitle, setNewTitle] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [assigneeId, setAssigneeId] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [toggling, setToggling] = useState<string | null>(null);
 
@@ -111,9 +132,10 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete, onTimer
 
         setSubmitting(true);
         try {
-            await onCreate(newTitle, dueDate || undefined);
+            await onCreate(newTitle, dueDate || undefined, assigneeId || undefined);
             setNewTitle('');
             setDueDate('');
+            setAssigneeId('');
         } finally {
             setSubmitting(false);
         }
@@ -170,6 +192,8 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete, onTimer
                             onDelete={onDelete}
                             onTimerToggle={onTimerToggle}
                             toggling={toggling}
+                            canCreate={canCreate}
+                            currentUserId={currentUserId}
                         />
                     ))}
                 </AnimatePresence>
@@ -181,34 +205,48 @@ export const SubTaskSection = ({ subTasks, onToggle, onCreate, onDelete, onTimer
                 )}
             </div>
 
-            <form onSubmit={handleCreate} className="pt-6 border-t border-slate-50 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 transition-colors">
-                <div className="md:col-span-12 lg:col-span-7">
-                    <input
-                        type="text"
-                        placeholder="New sub-task..."
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
-                    />
-                </div>
-                <div className="md:col-span-6 lg:col-span-3">
-                    <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-sm dark:text-white focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
-                    />
-                </div>
-                <div className="md:col-span-6 lg:col-span-2">
-                    <button
-                        type="submit"
-                        disabled={submitting || !newTitle}
-                        className="w-full h-full min-h-[46px] bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-none flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:bg-slate-300 dark:disabled:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 dark:shadow-none active:scale-95 font-bold"
-                    >
-                        {submitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
-                    </button>
-                </div>
-            </form>
+            {canCreate && (
+                <form onSubmit={handleCreate} className="pt-6 border-t border-slate-50 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 transition-colors">
+                    <div className="md:col-span-12 lg:col-span-4">
+                        <input
+                            type="text"
+                            placeholder="New sub-task..."
+                            value={newTitle}
+                            onChange={(e) => setNewTitle(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
+                        />
+                    </div>
+                    <div className="md:col-span-12 lg:col-span-4">
+                        <select
+                            value={assigneeId}
+                            onChange={(e) => setAssigneeId(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-[12px] dark:text-white focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none appearance-none cursor-pointer font-bold"
+                        >
+                            <option value="">No Assignee</option>
+                            {teamMembers.map(m => (
+                                <option key={m.id} value={m.id}>{m.full_name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="md:col-span-12 lg:col-span-3">
+                        <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none text-sm dark:text-white focus:border-orange-500 dark:focus:ring-4 dark:focus:ring-orange-500/10 transition-all outline-none"
+                        />
+                    </div>
+                    <div className="md:col-span-12 lg:col-span-1">
+                        <button
+                            type="submit"
+                            disabled={submitting || !newTitle}
+                            className="w-full h-full min-h-[46px] bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-none flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:bg-slate-300 dark:disabled:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 dark:shadow-none active:scale-95 font-bold"
+                        >
+                            {submitting ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                        </button>
+                    </div>
+                </form>
+            )}
         </div>
     );
 };

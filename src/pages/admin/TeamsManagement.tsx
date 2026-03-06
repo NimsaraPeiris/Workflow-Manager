@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Search, Loader2, Users, Building2, Trash2 } from 'lucide-react';
+import { Search, Loader2, Users, Building2, Trash2, UserPlus } from 'lucide-react';
 import { auditLogger } from '../../lib/auditLogger';
-import { CreateTeamModal } from '../../components/admin';
+import { CreateTeamModal, ManageTeamMembersModal } from '../../components/admin';
 import type { User, Department } from '../../types';
 
 interface TeamsManagementProps {
@@ -18,6 +18,7 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
     const [teamLoading, setTeamLoading] = useState(false);
     const [newTeam, setNewTeam] = useState({ name: '', departmentId: '' });
     const [error, setError] = useState('');
+    const [selectedTeamForMembers, setSelectedTeamForMembers] = useState<any | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -183,9 +184,14 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
                                 </div>
                             </div>
 
-                            <button className="mt-8 pt-6 border-t border-slate-50 dark:border-slate-800 w-full text-left flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-orange-600 transition-colors">
-                                <span>Squad details</span>
-                                <Loader2 size={14} className="opacity-0 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-700" />
+                            <button
+                                onClick={() => setSelectedTeamForMembers(team)}
+                                className="mt-8 pt-6 border-t border-slate-50 dark:border-slate-800 w-full text-left flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-orange-600 transition-colors"
+                            >
+                                <span>Manage Squad Roster</span>
+                                <div className="p-1 px-2 bg-slate-100 dark:bg-slate-800 rounded-none group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                                    <UserPlus size={12} />
+                                </div>
                             </button>
                         </div>
                     ))}
@@ -207,6 +213,14 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
                 departments={departments}
                 loading={teamLoading}
                 error={error}
+            />
+
+            <ManageTeamMembersModal
+                isOpen={!!selectedTeamForMembers}
+                onClose={() => setSelectedTeamForMembers(null)}
+                team={selectedTeamForMembers}
+                departments={departments}
+                onSaved={fetchData}
             />
         </div>
     );

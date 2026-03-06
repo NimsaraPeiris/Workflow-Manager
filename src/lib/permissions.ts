@@ -60,6 +60,12 @@ export const hasPermission = (user: any, permission: PermissionKey): boolean => 
 
     if (appRole === 'SUPER_ADMIN') return true;
 
+    // Head of Department auto-permissions
+    if (appRole === 'DEP_HEAD' || appRole === 'HEAD') {
+        if (permission === 'task:view_dept') return true;
+        if (permission === 'user:view') return true;
+    }
+
     const permissions = user.permissions || user.user_metadata?.permissions || [];
     if (!Array.isArray(permissions)) return false;
     return permissions.includes(permission);

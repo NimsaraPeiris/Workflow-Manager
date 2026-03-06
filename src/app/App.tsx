@@ -30,6 +30,8 @@ function AppContent() {
     const [departments, setDepartments] = useState<any[]>([]);
     const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
     const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
+    const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+    const [userTeams, setUserTeams] = useState<any[]>([]);
     const [highPriorityCount, setHighPriorityCount] = useState(0);
     const [externalTaskCount, setExternalTaskCount] = useState(0);
     const [approvedCount, setApprovedCount] = useState(0);
@@ -49,7 +51,7 @@ function AppContent() {
 
             const { data: profile, error } = await supabase
                 .from('profiles')
-                .select('*')
+                .select('*, team:teams(id, name)')
                 .eq('id', authUser.id)
                 .maybeSingle();
 
@@ -89,6 +91,7 @@ function AppContent() {
                 // Fallback for role/dept if profile still doesn't exist (e.g. insert failed)
                 role: activeProfile?.role || authUser.user_metadata?.role || 'EMPLOYEE',
                 department_id: activeProfile?.department_id || authUser.user_metadata?.department_id,
+                team_id: activeProfile?.team_id || authUser.user_metadata?.team_id,
                 full_name: activeProfile?.full_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0],
                 permissions: Array.isArray(activeProfile?.permissions) ? activeProfile.permissions :
                     Array.isArray(authUser?.user_metadata?.permissions) ? authUser.user_metadata.permissions : []
@@ -99,6 +102,7 @@ function AppContent() {
                 user.id !== combinedUser.id ||
                 user.role !== combinedUser.role ||
                 user.department_id !== combinedUser.department_id ||
+                user.team_id !== combinedUser.team_id ||
                 JSON.stringify(user.permissions) !== JSON.stringify(combinedUser.permissions);
 
             if (hasChanged) {
@@ -122,7 +126,7 @@ function AppContent() {
                 setLoading(false);
                 setLoadingError("Initialization taking longer than expected. System fallback engaged.");
             }
-        }, 5000);
+        }, 10000);
 
         const init = async () => {
             try {
@@ -155,16 +159,41 @@ function AppContent() {
         };
     }, []);
 
+    const fetchTeams = async (userProfile: any) => {
+        if (!userProfile) return;
+        const appRole = (userProfile.role && userProfile.role !== 'authenticated')
+            ? userProfile.role
+            : userProfile.user_metadata?.role;
+        const deptId = userProfile.department_id || userProfile.user_metadata?.department_id;
+
+        let query = supabase.from('teams').select('*');
+
+        if (appRole === 'SUPER_ADMIN') {
+            // See all teams
+        } else if (hasPermission(userProfile, 'task:view_dept') && deptId) {
+            query = query.eq('department_id', deptId);
+        } else if (userProfile.team_id) {
+            query = query.eq('id', userProfile.team_id);
+        } else {
+            setUserTeams([]);
+            return;
+        }
+
+        const { data } = await query.order('name');
+        if (data) setUserTeams(data);
+    };
+
     useEffect(() => {
         if (user && !loading) {
             fetchStats();
+            fetchTeams(user);
             // Redirect based on permissions if needed
             if (!hasPermission(user, 'task:view') && !selectedDeptId && currentView === 'dashboard') {
                 const deptId = user.department_id || user.user_metadata?.department_id;
                 if (deptId) setSelectedDeptId(deptId);
             }
         }
-    }, [user?.id, user?.permissions?.length, user?.role, user?.department_id, loading]);
+    }, [user?.id, user?.permissions?.length, user?.role, user?.department_id, user?.team_id, loading]);
 
     // Dynamic Tab Titles
     useEffect(() => {
@@ -211,11 +240,17 @@ function AppContent() {
             if (canViewAll) {
                 // No filter needed, fetch all for global stats
             } else if (canViewDept && userDeptId) {
-                // View my department tasks + tasks I created + history
-                taskQuery = taskQuery.or(`department_id.eq.${userDeptId},creator_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
+                // View my department tasks + tasks I created + history + squad tasks
+                const teamId = user?.team_id || user?.user_metadata?.team_id;
+                let filter = `department_id.eq.${userDeptId},creator_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`;
+                if (teamId) filter += `,team_id.eq.${teamId}`;
+                taskQuery = taskQuery.or(filter);
             } else if (user?.id) {
-                // Standard employee: tasks assigned to me + history
-                taskQuery = taskQuery.or(`assignee_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
+                // Standard employee: tasks assigned to me + history + squad tasks
+                const teamId = user?.team_id || user?.user_metadata?.team_id;
+                let filter = `assignee_id.eq.${user.id},creator_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`;
+                if (teamId) filter += `,team_id.eq.${teamId}`;
+                taskQuery = taskQuery.or(filter);
             } else {
                 return;
             }
@@ -326,6 +361,7 @@ function AppContent() {
                 selectedDeptId={selectedDeptId}
                 onDeptSelect={(id) => {
                     setSelectedDeptId(id);
+                    setSelectedTeamId(null);
                     setIsSidebarOpen(false);
                     setSelectedTaskId(null); // Return to dashboard view for the selected department
                 }}
@@ -340,7 +376,19 @@ function AppContent() {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
                     setSelectedTaskId(null); // Exit task details when switching views
-                    if (view !== 'dashboard' && view !== 'approved' && view !== 'cancelled') setSelectedDeptId(null);
+                    if (view !== 'dashboard' && view !== 'approved' && view !== 'cancelled') {
+                        setSelectedDeptId(null);
+                        setSelectedTeamId(null);
+                    }
+                }}
+                selectedTeamId={selectedTeamId}
+                userTeams={userTeams}
+                onTeamSelect={(id) => {
+                    setSelectedTeamId(id);
+                    setSelectedDeptId(null);
+                    setIsSidebarOpen(false);
+                    setSelectedTaskId(null);
+                    setCurrentView('dashboard');
                 }}
             />
 
@@ -364,6 +412,7 @@ function AppContent() {
                             onTaskClick={(id) => setSelectedTaskId(id)}
                             currentUser={user}
                             filterDeptId={selectedDeptId}
+                            filterTeamId={selectedTeamId}
                             onDeptSelect={setSelectedDeptId}
                             onRefreshStats={fetchStats}
                             currentView={currentView}

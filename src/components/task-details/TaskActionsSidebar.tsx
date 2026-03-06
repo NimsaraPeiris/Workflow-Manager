@@ -1,4 +1,4 @@
-import { User as UserIcon, Tag } from 'lucide-react';
+import { User as UserIcon, Tag, Users } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { PermissionGuard } from '../auth/PermissionGuard';
 import type { Task, TaskStatus } from '../../types';
@@ -10,6 +10,7 @@ interface TaskActionsSidebarProps {
     onUpdateStatus: (status: TaskStatus) => void;
     onShowAssignModal: () => void;
     onShowDecisionModal: (status: TaskStatus) => void;
+    onClaim: () => void;
     cancellationRequester?: string;
 }
 
@@ -20,17 +21,33 @@ export const TaskActionsSidebar = ({
     onUpdateStatus,
     onShowAssignModal,
     onShowDecisionModal,
+    onClaim,
     cancellationRequester
 }: TaskActionsSidebarProps) => {
+    const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.user_metadata?.role === 'SUPER_ADMIN';
+    const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
+    const userTeamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
+
+    const isTeamMember = task.team_id && userTeamId === task.team_id;
+    const canClaim = isTeamMember && !task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'ACCEPTED');
+
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl p-8 space-y-8 rounded-none transition-all">
             <div className="group">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 font-black">Assignee</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 font-black">
+                    {task.assignee_id ? 'Assignee' : task.team_id ? 'Assigned Team' : 'Assignment'}
+                </p>
                 <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-none transition-all group-hover:bg-slate-100 dark:group-hover:bg-slate-800">
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-500 flex items-center justify-center rounded-none shadow-inner transition-colors"><UserIcon size={24} /></div>
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-500 flex items-center justify-center rounded-none shadow-inner transition-colors">
+                        {task.assignee_id ? <UserIcon size={24} /> : task.team_id ? <Users size={24} /> : <UserIcon size={24} className="opacity-50" />}
+                    </div>
                     <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{(task as any).assignee?.full_name || 'Unassigned'}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-600 font-bold uppercase tracking-tighter mt-0.5">Wait for supervisor</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {task.assignee?.full_name || task.team?.name || 'Unassigned'}
+                        </p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-600 font-bold uppercase tracking-tighter mt-0.5">
+                            {task.assignee_id ? 'Individual Member' : task.team_id ? 'Full Squad Active' : 'Wait for supervisor'}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -49,17 +66,22 @@ export const TaskActionsSidebar = ({
             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4 transition-colors">
                 {/* Accept Task */}
                 <PermissionGuard permission="task:approve">
-                    {currentUser.user_metadata?.department_id === task.department_id && task.status === 'CREATED' && (
+                    {(isAdmin || userDeptId === task.department_id) && task.status === 'CREATED' && (
                         <Button onClick={() => onUpdateStatus('ACCEPTED')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">Accept Task</Button>
                     )}
                 </PermissionGuard>
 
                 {/* Assign / Reassign */}
                 <PermissionGuard permission="task:assign">
-                    {currentUser.user_metadata?.department_id === task.department_id && (task.status === 'ACCEPTED' || task.status === 'CREATED' || task.status === 'ASSIGNED') && (
-                        <Button onClick={() => onShowAssignModal()} variant="primary" className="w-full h-12 text-sm font-bold dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 active:scale-95 transition-all">{task.assignee_id ? 'Reassign' : 'Assign'}</Button>
+                    {(isAdmin || userDeptId === task.department_id) && (task.status === 'ACCEPTED' || task.status === 'CREATED' || task.status === 'ASSIGNED') && (
+                        <Button onClick={() => onShowAssignModal()} variant="primary" className="w-full h-12 text-sm font-bold dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 active:scale-95 transition-all">{task.assignee_id || task.team_id ? 'Reassign' : 'Assign'}</Button>
                     )}
                 </PermissionGuard>
+
+                {/* Team Claim Action */}
+                {canClaim && (
+                    <Button onClick={onClaim} loading={updating} className="w-full h-12 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all">Claim Task</Button>
+                )}
 
                 {/* Employee Self-Actions */}
                 {currentUser.id === task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'PAUSED') && (

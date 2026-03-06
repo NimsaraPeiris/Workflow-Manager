@@ -130,11 +130,11 @@ export const AssignEmployeeModal = ({
                                                 className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-none outline-none hover:border-orange-200 dark:hover:border-orange-500/50 focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 transition-all appearance-none cursor-pointer text-slate-700 dark:text-slate-200 font-bold"
                                             >
                                                 <option value="" disabled className="dark:bg-slate-900">Choose an employee...</option>
-                                                {users.filter(u => u.department_id === userDeptId).map(u => (
-                                                    <option key={u.id} value={u.id} className="dark:bg-slate-900">{u.full_name} ({u.role})</option>
+                                                {users.filter(u => userRole === 'SUPER_ADMIN' || u.department_id === (taskDeptId || userDeptId)).map(u => (
+                                                    <option key={u.id} value={u.id} className="dark:bg-slate-900">{u.full_name} ({u.role}) - {u.departments?.name || 'No Dept'}</option>
                                                 ))}
-                                                {users.filter(u => u.department_id === userDeptId).length === 0 && (
-                                                    <option disabled className="dark:bg-slate-900">No employees in your department</option>
+                                                {users.filter(u => userRole === 'SUPER_ADMIN' || u.department_id === (taskDeptId || userDeptId)).length === 0 && (
+                                                    <option disabled className="dark:bg-slate-900">No employees eligible for selection</option>
                                                 )}
                                             </select>
                                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600 group-hover:text-orange-500 transition-colors">
@@ -169,11 +169,11 @@ export const AssignEmployeeModal = ({
                                                 className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-none outline-none hover:border-orange-200 dark:hover:border-orange-500/50 focus:border-orange-500 dark:focus:ring-8 dark:focus:ring-orange-500/10 transition-all appearance-none cursor-pointer text-slate-700 dark:text-slate-200 font-bold"
                                             >
                                                 <option value="" disabled className="dark:bg-slate-900">Choose a squad...</option>
-                                                {teams.filter(t => t.department_id === userDeptId).map(t => (
-                                                    <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name}</option>
+                                                {teams.filter(t => userRole === 'SUPER_ADMIN' || t.department_id === (taskDeptId || userDeptId)).map(t => (
+                                                    <option key={t.id} value={t.id} className="dark:bg-slate-900">{t.name} ({departments.find(d => d.id === t.department_id)?.name || 'Squad'})</option>
                                                 ))}
-                                                {teams.filter(t => t.department_id === userDeptId).length === 0 && (
-                                                    <option disabled className="dark:bg-slate-900">No teams in your department</option>
+                                                {teams.filter(t => userRole === 'SUPER_ADMIN' || t.department_id === (taskDeptId || userDeptId)).length === 0 && (
+                                                    <option disabled className="dark:bg-slate-900">No teams eligible for selection</option>
                                                 )}
                                             </select>
                                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600 group-hover:text-orange-500 transition-colors">

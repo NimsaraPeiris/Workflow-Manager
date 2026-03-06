@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Clock, ChevronRight, User as UserIcon, Building2, Flag } from 'lucide-react';
+import { Clock, ChevronRight, User as UserIcon, Building2, Flag, Users } from 'lucide-react';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { Task, TaskStatus } from '../types';
 import { Badge } from './ui/Badge';
@@ -158,12 +158,12 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <div className={`w-8 h-8 rounded-none ${task.assignee_id ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-900/30' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700'} flex items-center justify-center text-[10px] font-bold border transition-colors`}>
-                                    {task.assignee_id ? getInitials(task.assignee?.full_name) : <UserIcon size={12} />}
+                                <div className={`w-8 h-8 rounded-none ${task.assignee_id || task.team_id ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-900/30' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700'} flex items-center justify-center text-[10px] font-bold border transition-colors`}>
+                                    {task.assignee_id ? getInitials(task.assignee?.full_name) : task.team_id ? <Users size={12} /> : <UserIcon size={12} />}
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-tighter">Assignee</p>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{task.assignee?.full_name || 'Pending Assignment'}</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-tighter">{task.assignee_id ? 'Assignee' : 'Team / Squad'}</p>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{task.assignee?.full_name || task.team?.name || 'Pending Assignment'}</p>
                                 </div>
                             </div>
                         </div>

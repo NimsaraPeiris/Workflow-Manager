@@ -40,6 +40,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({ title: '', description: '', confirmText: '', variant: 'primary' as 'primary' | 'danger' | 'warning' });
     const [pendingAssignment, setPendingAssignment] = useState<{ userId: string | null; teamId?: string | null; newDeptId?: string } | null>(null);
+    const [pendingSubTaskToggle, setPendingSubTaskToggle] = useState<{ id: string; isCompleted: boolean } | null>(null);
 
     const canAssign = hasPermission(currentUser, 'task:assign');
     const canEdit = hasPermission(currentUser, 'task:edit');
@@ -82,7 +83,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     assignee:profiles!tasks_assignee_id_fkey(full_name),
                     department:departments(name),
                     team:teams(name),
-                    sub_tasks(*),
+                    sub_tasks(*, assignee:profiles(full_name)),
                     activities:task_activities(
                         *,
                         profile:profiles(full_name)
@@ -93,15 +94,21 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             // Access Control Enforcement
             const canViewGlobal = hasPermission(currentUser, 'task:view');
             const canViewDept = hasPermission(currentUser, 'task:view_dept');
-            const deptId = currentUser?.user_metadata?.department_id;
+            const deptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
+            const teamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
 
             if (!canViewGlobal) {
                 if (canViewDept && deptId) {
-                    // Head/Dept viewing: can only see their own creations or tasks belonging to their department
-                    query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+                    // Head/Dept viewing: can only see their own creations, tasks belonging to their department, or tasks for their team
+                    let filter = `department_id.eq.${deptId},creator_id.eq.${currentUser.id}`;
+                    if (teamId) filter += `,team_id.eq.${teamId}`;
+                    query = query.or(filter);
                 } else {
-                    // Employee viewing: can only see tasks assigned to them OR tasks they created
-                    query = query.or(`assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`);
+                    // Employee viewing: can only see tasks assigned to them, tasks they created, tasks for their team, or tasks in their department
+                    let filter = `assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`;
+                    if (deptId) filter += `,department_id.eq.${deptId}`;
+                    if (teamId) filter += `,team_id.eq.${teamId}`;
+                    query = query.or(filter);
                 }
             }
 
@@ -362,10 +369,19 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         };
 
         if (newDeptId) {
+            // Find the head of the target department
+            const { data: headProfile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('department_id', newDeptId)
+                .in('role', ['DEP_HEAD', 'HEAD'])
+                .limit(1)
+                .maybeSingle();
+
             updates.department_id = newDeptId;
             updates.team_id = null;
-            updates.assignee_id = null; // Reset assignee when moving depts
-            updates.status = 'CREATED'; // Reset status to CREATED for new dept head to accept
+            updates.assignee_id = headProfile?.id || null;
+            updates.status = 'ASSIGNED';
         } else if (teamId) {
             updates.team_id = teamId;
             updates.assignee_id = null; // Unassign individual when assigning team
@@ -412,6 +428,53 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             alert(`Failed to assign task: ${error.message}`);
         }
         setUpdating(false);
+    };
+    const executeSubTaskToggle = async (id: string, isCompleted: boolean) => {
+        if (!task) return;
+        setUpdating(true);
+        const sub = task.sub_tasks?.find(s => s.id === id);
+        const updates: any = { is_completed: isCompleted, updated_at: new Date().toISOString() };
+
+        // Stop subtask timer if completing it
+        if (isCompleted && sub?.timer_started_at) {
+            const now = new Date();
+            const startTime = new Date(sub.timer_started_at);
+            const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+            updates.total_time_spent = (sub.total_time_spent || 0) + elapsedSeconds;
+            updates.timer_started_at = null;
+        }
+
+        const { error } = await supabase
+            .from('sub_tasks')
+            .update(updates)
+            .eq('id', id);
+
+        if (!error) {
+            await addActivity({
+                activity_type: 'STATUS_CHANGE',
+                content: `${isCompleted ? 'Finished' : 'Reopened'} sub-task: ${sub?.title}`,
+                field_name: 'sub_task_completion',
+                new_value: isCompleted ? 'COMPLETED' : 'INCOMPLETE'
+            });
+            setShowConfirmModal(false);
+            setPendingSubTaskToggle(null);
+            fetchTaskDetails();
+        } else {
+            alert(`Failed to update sub-task: ${error.message}`);
+        }
+        setUpdating(false);
+    };
+
+    const handleClaim = async () => {
+        if (!task || !currentUser) return;
+        setConfirmConfig({
+            title: 'Claim Task',
+            description: `Are you sure you want to take ownership of this task? You will be set as the primary assignee.`,
+            confirmText: 'Claim Now',
+            variant: 'primary'
+        });
+        setPendingAssignment({ userId: currentUser.id, teamId: task.team_id, newDeptId: undefined });
+        setShowConfirmModal(true);
     };
 
     const handleDateUpdate = async (newDate: string) => {
@@ -520,42 +583,64 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
                     <SubTaskSection
                         subTasks={task.sub_tasks || []}
+                        currentUserId={currentUser.id}
+                        teamMembers={users.filter(u => {
+                            if (task.team_id) return u.team_id === task.team_id;
+                            return u.department_id === task.department_id;
+                        })}
+                        canCreate={
+                            hasPermission(currentUser, 'task:view_dept') ||
+                            currentUser.id === task.creator_id ||
+                            currentUser.role === 'SUPER_ADMIN'
+                        }
                         onToggle={async (id: string, isCompleted: boolean) => {
                             const sub = task.sub_tasks?.find(s => s.id === id);
-                            const updates: any = { is_completed: isCompleted, updated_at: new Date().toISOString() };
-
-                            // Stop subtask timer if completing it
-                            if (isCompleted && sub?.timer_started_at) {
-                                const now = new Date();
-                                const startTime = new Date(sub.timer_started_at);
-                                const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
-                                updates.total_time_spent = (sub.total_time_spent || 0) + elapsedSeconds;
-                                updates.timer_started_at = null;
-                            }
-
-                            const { error } = await supabase
-                                .from('sub_tasks')
-                                .update(updates)
-                                .eq('id', id);
-                            if (!error) fetchTaskDetails();
+                            setConfirmConfig({
+                                title: isCompleted ? 'Finish Sub-task' : 'Reopen Sub-task',
+                                description: isCompleted
+                                    ? `Are you sure you want to mark "${sub?.title}" as finished?`
+                                    : `Are you sure you want to reopen "${sub?.title}"?`,
+                                confirmText: isCompleted ? 'Finish' : 'Reopen',
+                                variant: 'primary'
+                            });
+                            setPendingSubTaskToggle({ id, isCompleted });
+                            setShowConfirmModal(true);
                         }}
-                        onCreate={async (title: string, subDueDate?: string) => {
+                        onCreate={async (title: string, subDueDate?: string, assigneeId?: string) => {
                             const { error } = await supabase
                                 .from('sub_tasks')
                                 .insert([{
                                     task_id: taskId,
                                     title,
                                     due_date: subDueDate || null,
-                                    total_time_spent: 0
+                                    total_time_spent: 0,
+                                    assignee_id: assigneeId || null
                                 }]);
-                            if (!error) fetchTaskDetails();
+
+                            if (!error) {
+                                await addActivity({
+                                    activity_type: 'EDIT',
+                                    content: `Created new sub-task: ${title}`,
+                                    field_name: 'sub_task'
+                                });
+                                fetchTaskDetails();
+                            }
                         }}
                         onDelete={async (id: string) => {
+                            const sub = task.sub_tasks?.find(s => s.id === id);
                             const { error } = await supabase
                                 .from('sub_tasks')
                                 .delete()
                                 .eq('id', id);
-                            if (!error) fetchTaskDetails();
+
+                            if (!error) {
+                                await addActivity({
+                                    activity_type: 'EDIT',
+                                    content: `Deleted sub-task: ${sub?.title}`,
+                                    field_name: 'sub_task'
+                                });
+                                fetchTaskDetails();
+                            }
                         }}
                         onTimerToggle={async (id: string, isStarting: boolean) => {
                             const sub = task.sub_tasks?.find(s => s.id === id);
@@ -567,15 +652,26 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             if (isStarting) {
                                 updates.timer_started_at = now.toISOString();
                                 // Also ensure the main task is IN_PROGRESS if we start a subtask?
-                                // User might expect this.
                                 if (task.status !== 'IN_PROGRESS') {
                                     await executeStatusUpdate('IN_PROGRESS');
                                 }
+                                await addActivity({
+                                    activity_type: 'STATUS_CHANGE',
+                                    content: `Started working on sub-task: ${sub.title}`,
+                                    field_name: 'sub_task_timer',
+                                    new_value: 'STARTED'
+                                });
                             } else if (sub.timer_started_at) {
                                 const startTime = new Date(sub.timer_started_at);
                                 const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
                                 updates.total_time_spent = (sub.total_time_spent || 0) + elapsedSeconds;
                                 updates.timer_started_at = null;
+                                await addActivity({
+                                    activity_type: 'STATUS_CHANGE',
+                                    content: `Paused working on sub-task: ${sub.title}`,
+                                    field_name: 'sub_task_timer',
+                                    new_value: 'STOPPED'
+                                });
                             }
 
                             const { error } = await supabase
@@ -608,6 +704,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             setPendingStatus(status);
                             setShowDecisionModal(true);
                         }}
+                        onClaim={handleClaim}
                         cancellationRequester={(task as any).activities?.find((a: any) => a.new_value === 'CANCEL_REQUESTED')?.profile?.full_name}
                     />
                 </div>
@@ -640,12 +737,16 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 onClose={() => {
                     setShowConfirmModal(false);
                     setPendingStatus(null);
+                    setPendingAssignment(null);
+                    setPendingSubTaskToggle(null);
                 }}
                 onConfirm={() => {
                     if (pendingStatus) {
                         executeStatusUpdate(pendingStatus);
                     } else if (pendingAssignment) {
                         executeAssignment(pendingAssignment.userId, pendingAssignment.teamId, pendingAssignment.newDeptId);
+                    } else if (pendingSubTaskToggle) {
+                        executeSubTaskToggle(pendingSubTaskToggle.id, pendingSubTaskToggle.isCompleted);
                     }
                 }}
                 title={confirmConfig.title}
