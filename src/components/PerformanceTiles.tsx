@@ -36,9 +36,9 @@ export const PerformanceTiles: React.FC<PerformanceTilesProps> = ({ tasks }) => 
             value: totalTasks.toString(),
             detail: 'All tasks',
             icon: FileText,
-            color: 'text-indigo-600',
-            bg: 'bg-indigo-50/50',
-            borderColor: 'group-hover:border-indigo-200'
+            color: 'text-blue-600',
+            bg: 'bg-blue-50/50',
+            borderColor: 'group-hover:border-blue-200'
         },
         {
             label: 'Completion',

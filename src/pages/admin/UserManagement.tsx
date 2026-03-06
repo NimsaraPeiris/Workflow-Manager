@@ -466,7 +466,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest border-2 ${user.role === 'SUPER_ADMIN' ? 'bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/10' :
+                                                <span className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest border-2 ${user.role === 'SUPER_ADMIN' ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/10' :
                                                     'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-500 border-orange-100 dark:border-orange-500/10'
                                                     } rounded-none`}>
                                                     {user.role}

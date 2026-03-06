@@ -321,18 +321,18 @@ export const Sidebar = ({
                                         className={`
                                             w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all group mt-2
                                             ${selectedDeptId === 'EXTERNAL'
-                                                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold border border-indigo-100 dark:border-indigo-500/20'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold border border-blue-100 dark:border-blue-500/20'
                                                 : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-100 dark:hover:border-slate-800'}
                                         `}
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className={`w-2 h-2 rounded-full shadow-inner transition-colors ${selectedDeptId === 'EXTERNAL' ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
+                                            <div className={`w-2 h-2 rounded-full shadow-inner transition-colors ${selectedDeptId === 'EXTERNAL' ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
                                             <span className="text-xs truncate tracking-tight">Cross-Dept Requests</span>
                                         </div>
                                         {externalTaskCount > 0 && (
                                             <span className={`
                                                 text-[10px] min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold rounded-lg
-                                                ${selectedDeptId === 'EXTERNAL' ? 'bg-indigo-200/50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}
+                                                ${selectedDeptId === 'EXTERNAL' ? 'bg-blue-200/50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}
                                             `}>
                                                 {externalTaskCount}
                                             </span>
@@ -354,18 +354,18 @@ export const Sidebar = ({
                             className={`
                                 w-full flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all group mb-2
                                 ${currentView === 'calendar'
-                                    ? 'bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold'
+                                    ? 'bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-700 dark:text-blue-400 font-bold'
                                     : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-sm hover:shadow-md'}
                             `}
                         >
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-xl shadow-sm border transition-colors ${currentView === 'calendar' ? 'bg-white dark:bg-slate-950 border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>
+                                <div className={`p-2 rounded-xl shadow-sm border transition-colors ${currentView === 'calendar' ? 'bg-white dark:bg-slate-950 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400'}`}>
                                     <Calendar size={16} />
                                 </div>
                                 <span className="text-xs font-bold tracking-tight">Timeline Calendar</span>
                             </div>
                             {currentView === 'calendar' && (
-                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shadow-sm" />
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 shadow-sm" />
                             )}
                         </button>
 
@@ -387,16 +387,7 @@ export const Sidebar = ({
                             </div>
                         </button>
 
-                        {/* <div className="bg-slate-50 dark:bg-slate-900/50 p-4 flex items-center gap-4 border border-slate-100 dark:border-slate-800 transition-colors rounded-2xl">
-                            <div className="w-10 h-10 bg-orange-600 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-orange-100 dark:shadow-orange-900/10 overflow-hidden relative group">
-                                <div className="absolute inset-0 bg-white/10 group-hover:translate-x-full transition-transform duration-700" />
-                                <span className="relative">W</span>
-                            </div>
-                            <div>
-                                <h5 className="text-xs font-bold text-slate-900 dark:text-white">Workflow Manager</h5>
-                                <p className="text-[10px] text-slate-400 font-medium">Alpha Version</p>
-                            </div>
-                        </div> */}
+
                     </div>
                 </div>
             </aside>

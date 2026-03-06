@@ -90,7 +90,7 @@ export const EditPermissionsModal = ({
                         <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
                             <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center shrink-0">
                                 <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-indigo-600 rounded-none shadow-lg">
+                                    <div className="p-3 bg-blue-600 rounded-none shadow-lg">
                                         <ShieldCheck size={24} className="text-white" />
                                     </div>
                                     <div>
@@ -101,7 +101,7 @@ export const EditPermissionsModal = ({
                                 <div className="flex items-center gap-6">
                                     <div className="text-right">
                                         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-0.5">Assigned Keys</span>
-                                        <span className="text-2xl font-black text-indigo-600">{editData.permissions.length}</span>
+                                        <span className="text-2xl font-black text-blue-600">{editData.permissions.length}</span>
                                     </div>
                                     <button onClick={onClose} type="button" className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-none transition-colors">
                                         <X size={24} className="text-slate-400 dark:text-slate-500" />
@@ -129,7 +129,7 @@ export const EditPermissionsModal = ({
                                                 type="text"
                                                 value={editData.fullName}
                                                 onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
-                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white"
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -137,7 +137,7 @@ export const EditPermissionsModal = ({
                                             <select
                                                 value={editData.departmentId}
                                                 onChange={(e) => setEditData({ ...editData, departmentId: e.target.value })}
-                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-black-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
                                             >
                                                 {departments.map(d => <option key={d.id} value={d.id} className="dark:bg-slate-900">{d.name}</option>)}
                                             </select>
@@ -147,7 +147,7 @@ export const EditPermissionsModal = ({
                                             <select
                                                 value={editData.teamId}
                                                 onChange={(e) => setEditData({ ...editData, teamId: e.target.value })}
-                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-black-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
                                             >
                                                 <option value="" className="dark:bg-slate-900">No Squad Assigned</option>
                                                 {departments.map(dept => {
@@ -176,7 +176,7 @@ export const EditPermissionsModal = ({
                                                         permissions: role ? role.permissions : editData.permissions
                                                     });
                                                 }}
-                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
                                             >
                                                 <option value="" className="dark:bg-slate-900">Keep Custom Permissions</option>
                                                 {roles.map(r => <option key={r.id} value={r.id} className="dark:bg-slate-900">{r.name}</option>)}
@@ -187,7 +187,7 @@ export const EditPermissionsModal = ({
 
                                 <section className="space-y-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-1.5 h-6 bg-indigo-600" />
+                                        <div className="w-1.5 h-6 bg-blue-600" />
                                         <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em]">Micro-Permission Architecture</h3>
                                     </div>
 
@@ -209,20 +209,20 @@ export const EditPermissionsModal = ({
                                                         className={`
                                                             flex items-center justify-between px-6 py-5 text-left transition-all relative group
                                                             ${activeTab === k
-                                                                ? 'bg-white dark:bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                                                                ? 'bg-white dark:bg-blue-600/10 text-blue-600 dark:text-blue-400 font-bold'
                                                                 : 'text-slate-500 hover:bg-white dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white'}
                                                         `}
                                                     >
                                                         <div className="flex items-center gap-3">
-                                                            <Icon size={18} className={activeTab === k ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+                                                            <Icon size={18} className={activeTab === k ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'} />
                                                             <span className="text-xs uppercase tracking-wider">{group.label.split(' ')[0]}</span>
                                                         </div>
                                                         {selectedCount > 0 && (
-                                                            <div className={`text-[9px] px-1.5 py-0.5 rounded-none font-black ${activeTab === k ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
+                                                            <div className={`text-[9px] px-1.5 py-0.5 rounded-none font-black ${activeTab === k ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
                                                                 {selectedCount}
                                                             </div>
                                                         )}
-                                                        {activeTab === k && <div className="absolute right-0 top-0 bottom-0 w-1 bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.4)]" />}
+                                                        {activeTab === k && <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]" />}
                                                     </button>
                                                 );
                                             })}
@@ -248,7 +248,7 @@ export const EditPermissionsModal = ({
                                                             <button
                                                                 type="button"
                                                                 onClick={() => toggleCategory(key as any)}
-                                                                className={`text-[10px] font-bold uppercase transition-all px-4 py-2 rounded-none border-2 ${isAllSelected ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-200'}`}
+                                                                className={`text-[10px] font-bold uppercase transition-all px-4 py-2 rounded-none border-2 ${isAllSelected ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-200'}`}
                                                             >
                                                                 {isAllSelected ? 'Revoke All' : 'Grant Category'}
                                                             </button>
@@ -262,15 +262,15 @@ export const EditPermissionsModal = ({
                                                                     className={`
                                                                         flex items-center gap-4 p-5 rounded-none border-2 transition-all cursor-pointer group
                                                                         ${editData.permissions?.includes(p.key)
-                                                                            ? 'bg-indigo-50/30 dark:bg-indigo-900/10 border-indigo-600/20'
+                                                                            ? 'bg-blue-50/30 dark:bg-blue-900/10 border-blue-600/20'
                                                                             : 'bg-slate-50/50 dark:bg-slate-800/10 border-transparent hover:border-slate-100 dark:hover:border-slate-800 hover:bg-white'}
                                                                     `}
                                                                 >
                                                                     <div className={`
                                                                         w-6 h-6 rounded-none border-2 flex items-center justify-center transition-all
                                                                         ${editData.permissions?.includes(p.key)
-                                                                            ? 'bg-indigo-600 border-indigo-600 scale-110 shadow-lg shadow-indigo-100 dark:shadow-none'
-                                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 group-hover:border-indigo-400'}
+                                                                            ? 'bg-blue-600 border-blue-600 scale-110 shadow-lg shadow-blue-100 dark:shadow-none'
+                                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 group-hover:border-blue-400'}
                                                                     `}>
                                                                         {editData.permissions?.includes(p.key) && (
                                                                             <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white stroke-[4px]" fill="none" stroke="currentColor">
@@ -279,7 +279,7 @@ export const EditPermissionsModal = ({
                                                                         )}
                                                                     </div>
                                                                     <div className="min-w-0">
-                                                                        <span className={`text-xs font-bold block mb-0.5 transition-colors ${editData.permissions?.includes(p.key) ? 'text-indigo-950 dark:text-indigo-200' : 'text-slate-600 dark:text-slate-400'}`}>
+                                                                        <span className={`text-xs font-bold block mb-0.5 transition-colors ${editData.permissions?.includes(p.key) ? 'text-blue-950 dark:text-blue-200' : 'text-slate-600 dark:text-slate-400'}`}>
                                                                             {p.label}
                                                                         </span>
                                                                         <span className="text-[8px] font-black uppercase tracking-tighter text-slate-400 dark:text-slate-600">ID: {p.key}</span>
@@ -306,7 +306,7 @@ export const EditPermissionsModal = ({
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex-1 px-10 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white font-bold text-sm transition-all shadow-xl shadow-indigo-100 dark:shadow-none flex items-center justify-center gap-3 rounded-none"
+                                    className="flex-1 px-10 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white font-bold text-sm transition-all shadow-xl shadow-blue-100 dark:shadow-none flex items-center justify-center gap-3 rounded-none"
                                 >
                                     {loading ? <Loader2 className="animate-spin" size={20} /> : (
                                         <>

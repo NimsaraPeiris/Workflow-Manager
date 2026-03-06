@@ -68,7 +68,7 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                         </span>
                     )}
                     {!isOverdue && task.status === 'IN_PROGRESS' && (
-                        <span className="text-[9px] font-black text-indigo-500 uppercase tracking-tighter">
+                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">
                             ({getRemainingDaysText()})
                         </span>
                     )}
@@ -121,7 +121,7 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                                     {isOverdue ? 'DEADLINE EXPIRED ' : ''}
                                     {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                     {!isOverdue && task.status === 'IN_PROGRESS' && (
-                                        <span className="ml-1 text-indigo-500">
+                                        <span className="ml-1 text-blue-500">
                                             ({getRemainingDaysText()})
                                         </span>
                                     )}

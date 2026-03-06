@@ -36,7 +36,7 @@ export const TaskMainContent = ({ task, getBadgeVariant, canEdit, onDateUpdate }
                 );
             }
             return (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-bold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
                     {diffDays} days remaining
                 </span>
             );

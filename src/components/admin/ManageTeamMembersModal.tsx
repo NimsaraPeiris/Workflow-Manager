@@ -174,7 +174,7 @@ export const ManageTeamMembersModal = ({
                                                         <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                                                             {user.full_name}
                                                             {user.role === 'HEAD' && (
-                                                                <span className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[8px] font-black uppercase tracking-tighter rounded-none">Head</span>
+                                                                <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[8px] font-black uppercase tracking-tighter rounded-none">Head</span>
                                                             )}
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">

@@ -80,7 +80,7 @@ export const TaskActionsSidebar = ({
 
                 {/* Team Claim Action */}
                 {canClaim && (
-                    <Button onClick={onClaim} loading={updating} className="w-full h-12 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all">Claim Task</Button>
+                    <Button onClick={onClaim} loading={updating} className="w-full h-12 text-sm font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/10 active:scale-95 transition-all">Claim Task</Button>
                 )}
 
                 {/* Employee Self-Actions */}

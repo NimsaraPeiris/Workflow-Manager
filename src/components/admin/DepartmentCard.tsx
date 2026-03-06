@@ -41,14 +41,14 @@ export const DepartmentCard = ({ dept }: DepartmentCardProps) => {
                         dept.members.sort((a) => a.role === 'HEAD' ? -1 : 1).map(member => (
                             <div key={member.id} className="flex items-center justify-between py-2 px-3 -mx-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all rounded-none">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-9 h-9 rounded-none ${member.role === 'HEAD' ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-800'} flex items-center justify-center text-white dark:text-slate-400 text-xs font-bold`}>
+                                    <div className={`w-9 h-9 rounded-none ${member.role === 'HEAD' ? 'bg-blue-600 font-black' : 'bg-slate-100 dark:bg-slate-800'} flex items-center justify-center text-white dark:text-slate-400 text-xs font-bold`}>
                                         {member.full_name?.charAt(0) || '?'}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-bold text-slate-900 dark:text-slate-200">{member.full_name}</span>
                                             {member.role === 'HEAD' && (
-                                                <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-[9px] px-1.5 py-0.5 font-bold rounded-none uppercase tracking-wider">Head</span>
+                                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] px-1.5 py-0.5 font-bold rounded-none uppercase tracking-wider">Head</span>
                                             )}
                                         </div>
                                         <p className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1 font-medium">Node ID: {member.id.substring(0, 8)}</p>

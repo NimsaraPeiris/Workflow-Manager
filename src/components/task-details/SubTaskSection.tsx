@@ -48,12 +48,12 @@ const SubTaskRow = ({ st, onToggle, onDelete, onTimerToggle, toggling, canCreate
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={`flex items-center gap-4 p-4 border rounded-none transition-all ${st.is_completed
-                    ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75'
-                    : isMine
-                        ? 'bg-indigo-50/10 border-indigo-200 dark:border-indigo-500/30'
-                        : isAssigned
-                            ? 'bg-orange-50/10 border-orange-100 dark:border-orange-500/30'
-                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
+                ? 'bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-75'
+                : isMine
+                    ? 'bg-blue-50/10 border-blue-200 dark:border-blue-500/30'
+                    : isAssigned
+                        ? 'bg-orange-50/10 border-orange-100 dark:border-orange-500/30'
+                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
                 } shadow-sm`}
         >
             <button
