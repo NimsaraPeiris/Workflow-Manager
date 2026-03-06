@@ -163,18 +163,6 @@ export const EditPermissionsModal = ({
                                                 })}
                                             </select>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 text-xs">Access Tier</label>
-                                            <select
-                                                value={editData.role}
-                                                onChange={(e) => setEditData({ ...editData, role: e.target.value })}
-                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
-                                            >
-                                                <option value="EMPLOYEE" className="dark:bg-slate-900">Employee Tier</option>
-                                                <option value="HEAD" className="dark:bg-slate-900">Management Tier (Head)</option>
-                                                <option value="SUPER_ADMIN" className="dark:bg-slate-900">Technical Administrator</option>
-                                            </select>
-                                        </div>
                                         <div className="space-y-2 md:col-span-2 lg:col-span-3">
                                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 text-xs">Sync with Role Blueprint</label>
                                             <select
@@ -184,6 +172,7 @@ export const EditPermissionsModal = ({
                                                     setEditData({
                                                         ...editData,
                                                         roleId: e.target.value,
+                                                        role: role ? role.name : editData.role,
                                                         permissions: role ? role.permissions : editData.permissions
                                                     });
                                                 }}

@@ -90,17 +90,17 @@ export default function CalendarView({ currentUser, onTaskClick }: CalendarViewP
         switch (status) {
             case 'APPROVED': return 'bg-emerald-500';
             case 'IN_PROGRESS': return 'bg-amber-500';
-            case 'CANCELLED': return 'bg-rose-500';
+            case 'CANCELLED': return 'bg-slate-400';
             case 'SUBMITTED': return 'bg-indigo-500';
             case 'ASSIGNED': return 'bg-blue-500';
-            default: return 'bg-slate-400';
+            default: return 'bg-rose-500';
         }
     };
 
     if (loading && tasks.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin h-12 w-12 border-b-2 border-orange-600"></div>
+                <div className="animate-spin h-12 w-12 border-2 border-orange-600 border-t-transparent rounded-full"></div>
             </div>
         );
     }
@@ -136,7 +136,7 @@ export default function CalendarView({ currentUser, onTaskClick }: CalendarViewP
                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-20 -mt-20" />
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-200 dark:border-slate-800 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-none overflow-hidden transition-all">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-none overflow-hidden transition-all">
                 <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                         <div key={day} className="py-5 text-center">
@@ -155,26 +155,36 @@ export default function CalendarView({ currentUser, onTaskClick }: CalendarViewP
                             <div
                                 key={day.toString()}
                                 className={`
-                                    min-h-[160px] p-3 border-r border-b border-slate-100 dark:border-slate-800 transition-all relative group/cell
-                                    ${!isCurrentMonth ? 'bg-slate-50/30 dark:bg-slate-950/20' : 'bg-white dark:bg-slate-900'}
+                                    min-h-[160px] p-3 border-r border-b border-slate-100 dark:border-slate-800 transition-all relative group/cell overflow-hidden
+                                    ${dayTasks.length > 0
+                                        ? 'bg-orange-100/40 dark:bg-orange-500/[0.08]'
+                                        : !isCurrentMonth ? 'bg-slate-50/30 dark:bg-slate-950/20' : 'bg-white dark:bg-slate-900'}
                                     ${idx % 7 === 6 ? 'border-r-0' : ''}
                                     hover:bg-slate-50/80 dark:hover:bg-slate-800/30
                                 `}
                             >
-                                <div className="flex justify-between items-start mb-3">
+                                {dayTasks.length > 0 && (
+                                    <>
+                                        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-500/20 dark:bg-orange-500/30 blur-[60px] rounded-full -mr-20 -mt-20 pointer-events-none animate-pulse duration-[3000ms]" />
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-orange-400/20 dark:bg-orange-400/20 blur-2xl rounded-full -mr-8 -mt-8 pointer-events-none" />
+                                    </>
+                                )}
+                                <div className="flex justify-between items-start mb-3 relative z-10">
                                     <span className={`
                                         text-[11px] font-black w-7 h-7 flex items-center justify-center rounded-xl transition-all
                                         ${isToday
                                             ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/40 scale-110 z-10'
                                             : isCurrentMonth
-                                                ? 'text-slate-900 dark:text-slate-200 bg-slate-100/50 dark:bg-slate-800/50'
+                                                ? dayTasks.length > 0
+                                                    ? 'text-orange-900 dark:text-orange-200 bg-orange-100/50 dark:bg-orange-500/20'
+                                                    : 'text-slate-900 dark:text-slate-200 bg-slate-100/50 dark:bg-slate-800/50'
                                                 : 'text-slate-300 dark:text-slate-700'}
                                     `}>
                                         {format(day, 'd')}
                                     </span>
                                 </div>
 
-                                <div className="space-y-2 max-h-[120px] overflow-y-auto no-scrollbar scroll-smooth">
+                                <div className="space-y-2 max-h-[120px] overflow-y-auto no-scrollbar scroll-smooth relative z-10">
                                     {dayTasks.map(task => (
                                         <motion.button
                                             whileHover={{ x: 4 }}

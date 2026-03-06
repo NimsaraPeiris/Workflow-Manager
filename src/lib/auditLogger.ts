@@ -15,6 +15,7 @@ export type AuditAction =
     | 'ROLE_CHANGE'
     | 'USER_CREATE'
     | 'USER_UPDATE'
+    | 'USER_DELETE'
     | 'PERMISSION_CHANGE'
     | 'TEAM_CREATE'
     | 'TEAM_UPDATE'

@@ -29,6 +29,13 @@ export const PERMISSION_MAP = {
             { key: 'user:delete', label: 'Offboard Staff' },
         ]
     },
+    teams: {
+        label: 'Squad & Team Management',
+        micro: [
+            { key: 'team:view_dept', label: 'View Department Squads' },
+            { key: 'team:manage', label: 'Manage Squad Rosters' },
+        ]
+    },
     system: {
         label: 'System & Security',
         micro: [
@@ -42,6 +49,7 @@ export type PermissionKey =
     | 'dept:view' | 'dept:create' | 'dept:edit' | 'dept:delete'
     | 'task:view' | 'task:view_dept' | 'task:create' | 'task:edit' | 'task:delete' | 'task:assign' | 'task:approve'
     | 'user:view' | 'user:create' | 'user:edit' | 'user:delete'
+    | 'team:view_dept' | 'team:manage'
     | 'audit:view' | 'settings:manage';
 
 /**
@@ -64,6 +72,7 @@ export const hasPermission = (user: any, permission: PermissionKey): boolean => 
     if (appRole === 'DEP_HEAD' || appRole === 'HEAD') {
         if (permission === 'task:view_dept') return true;
         if (permission === 'user:view') return true;
+        if (permission === 'team:view_dept') return true;
     }
 
     const permissions = user.permissions || user.user_metadata?.permissions || [];

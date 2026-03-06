@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../lib/ThemeContext';
 import { PermissionGuard } from './auth/PermissionGuard';
+import { hasPermission } from '../lib/permissions';
 
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ interface SidebarProps {
     selectedTeamId: string | null;
     onTeamSelect: (id: string | null) => void;
     userTeams: any[];
+    user: any;
 }
 
 
@@ -47,7 +49,8 @@ export const Sidebar = ({
     currentView,
     selectedTeamId,
     onTeamSelect,
-    userTeams
+    userTeams,
+    user
 }: SidebarProps) => {
     const { theme, toggleTheme } = useTheme();
     const isOverview = currentView === 'dashboard' && !selectedDeptId;
@@ -81,7 +84,7 @@ export const Sidebar = ({
             icon: Users,
             active: currentView === 'teams',
             onClick: () => onViewChange('teams'),
-            permission: 'user:view' as const
+            permission: 'team:manage' as const
         },
         {
             id: 'audit',
@@ -240,7 +243,9 @@ export const Sidebar = ({
                         {userTeams.length > 0 && (
                             <div className="space-y-1 pt-2">
                                 <div className="flex items-center justify-between px-3 mb-2">
-                                    <p className="text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em]">Assigned Teams</p>
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em]">
+                                        {hasPermission(user, 'team:view_dept') ? 'Department Teams' : 'Assigned Squads'}
+                                    </p>
                                     <Users size={12} className="text-slate-300 dark:text-orange-500" />
                                 </div>
                                 <div className="space-y-0.5">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { Search, Loader2, ArrowLeft, Building2 } from 'lucide-react';
+import { supabase, createAdminClient } from '../../lib/supabaseClient';
+import { Search, Loader2, ArrowLeft, Building2, Users, Settings, X } from 'lucide-react';
 import { auditLogger } from '../../lib/auditLogger';
 import {
     AdminStats,
@@ -43,6 +43,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
     const [teamLoading, setTeamLoading] = useState(false);
 
     const [newDeptName, setNewDeptName] = useState('');
+    const [selectedDeptForEdit, setSelectedDeptForEdit] = useState<Department | null>(null);
     const [deptLoading, setDeptLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -93,22 +94,79 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         setDeptLoading(true);
         setError('');
         try {
-            const { data: deptData, error: deptErr } = await supabase.from('departments').insert([{ name: newDeptName }]).select().single();
-            if (deptErr) throw deptErr;
+            if (selectedDeptForEdit) {
+                // Update implementation
+                const { error: updateErr } = await supabase
+                    .from('departments')
+                    .update({ name: newDeptName })
+                    .eq('id', selectedDeptForEdit.id);
 
-            if (deptData) {
+                if (updateErr) throw updateErr;
+
                 await auditLogger.log({
                     userId: currentUser?.id || null,
-                    action: 'DEPT_CREATE',
+                    action: 'DEPT_UPDATE',
                     entityType: 'Department',
-                    entityId: deptData.id,
+                    entityId: selectedDeptForEdit.id,
                     newData: { name: newDeptName }
                 });
+            } else {
+                // Create implementation
+                const { data: deptData, error: deptErr } = await supabase.from('departments').insert([{ name: newDeptName }]).select().single();
+                if (deptErr) throw deptErr;
+
+                if (deptData) {
+                    await auditLogger.log({
+                        userId: currentUser?.id || null,
+                        action: 'DEPT_CREATE',
+                        entityType: 'Department',
+                        entityId: deptData.id,
+                        newData: { name: newDeptName }
+                    });
+                }
             }
 
             setNewDeptName('');
+            setSelectedDeptForEdit(null);
             setIsDeptModalOpen(false);
             fetchData();
+        } catch (err: any) {
+            console.error('Dept Action Error:', err);
+            if (err.status === 409 || err.code === '23505') {
+                setError('A department with this name already exists.');
+            } else {
+                setError(err.message || 'Failed to process department action.');
+            }
+        } finally {
+            setDeptLoading(false);
+        }
+    };
+
+    const handleDeleteDept = async (deptId: string) => {
+        const dept = departments.find(d => d.id === deptId);
+        if (!dept) return;
+
+        const hasMembers = users.some(u => u.department_id === deptId);
+        if (hasMembers) {
+            alert('Cannot delete department with active personnel. Reassign members first.');
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to decommission the "${dept.name}" department?`)) return;
+
+        setDeptLoading(true);
+        try {
+            const { error: deleteErr } = await supabase.from('departments').delete().eq('id', deptId);
+            if (deleteErr) throw deleteErr;
+
+            await auditLogger.log({
+                userId: currentUser?.id || null,
+                action: 'DEPT_DELETE',
+                entityType: 'Department',
+                entityId: deptId
+            });
+
+            await fetchData();
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -154,7 +212,8 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         setUserLoading(true);
         setError('');
         try {
-            const { data: authData, error: authErr } = await supabase.auth.signUp({
+            const adminClient = createAdminClient();
+            const { data: authData, error: authErr } = await adminClient.auth.signUp({
                 email: newUser.email,
                 password: newUser.password,
                 options: {
@@ -192,21 +251,14 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
             setNewUser({ email: '', fullName: '', password: '', departmentId: '', teamId: '', role: 'EMPLOYEE', roleId: '', permissions: [] });
 
             fetchData();
-            // Reset state
-            setNewUser({
-                email: '',
-                fullName: '',
-                password: '',
-                departmentId: '',
-                teamId: '',
-                role: 'EMPLOYEE',
-                roleId: '',
-                permissions: []
-            });
             alert('User provisioned successfully with identity keys and permissions.');
         } catch (err: any) {
             console.error('User creation failed:', err);
-            setError(err.message || 'Identity provision failed. Check system logs.');
+            if (err.status === 409 || err.code === '23505') {
+                setError('This email address is already associated with an identity.');
+            } else {
+                setError(err.message || 'Identity provision failed. Check system logs.');
+            }
         } finally {
             setUserLoading(false);
         }
@@ -255,9 +307,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                 newData: updates
             });
 
-            setIsEditModalOpen(false);
-            setSelectedUserForEdit(null); // Clear stale state
-            await fetchData();
+            fetchData();
             alert('Security keys updated successfully.');
         } catch (err: any) {
             console.error('Update failed:', err);
@@ -267,15 +317,50 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
         }
     };
 
+    const handleDeleteUser = async (userId: string) => {
+        if (!window.confirm('DANGER: This will permanently decommission this identity and purge all associated profile data. Continue?')) return;
+
+        setLoading(true);
+        setError('');
+        try {
+            const { error: deleteErr } = await supabase
+                .from('profiles')
+                .delete()
+                .eq('id', userId);
+
+            if (deleteErr) throw deleteErr;
+
+            await auditLogger.log({
+                userId: currentUser?.id || null,
+                action: 'USER_DELETE',
+                entityType: 'Profile',
+                entityId: userId
+            });
+
+            await fetchData();
+            alert('Identity successfully purged from system.');
+        } catch (err: any) {
+            console.error('Delete failed:', err);
+            setError(err.message || 'Failed to purge identity. Check for active task assignments.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const groupedProfiles = departments.map(dept => ({
         ...dept,
         members: users.filter(p => p.department_id === dept.id)
     }));
 
+    const unassignedMembers = users.filter(p => !p.department_id);
+
     const filteredDepts = groupedProfiles.filter(dept =>
         dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         dept.members.some(m => m.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+
+    const showUnassigned = unassignedMembers.length > 0 &&
+        (searchQuery === '' || unassignedMembers.some(m => m.full_name.toLowerCase().includes(searchQuery.toLowerCase())));
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -296,7 +381,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
             <AdminStats
                 departmentsCount={departments.length}
                 profilesCount={users.length}
-                headsCount={users.filter(p => p.role === 'HEAD').length}
+                headsCount={users.filter(p => !['EMPLOYEE', 'Custom', 'authenticated'].includes(p.role)).length}
             />
 
             {/* Search bar - only show when no dept selected or within dept */}
@@ -330,10 +415,10 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                             </button>
                             <div>
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                    {departments.find(d => d.id === selectedDeptId)?.name}
+                                    {selectedDeptId === 'unassigned' ? 'Unassigned Personnel' : departments.find(d => d.id === selectedDeptId)?.name}
                                 </h2>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">
-                                    {users.filter(u => u.department_id === selectedDeptId).length} Active Personnel
+                                    {users.filter(u => selectedDeptId === 'unassigned' ? !u.department_id : u.department_id === selectedDeptId).length} Active Personnel
                                 </p>
                             </div>
                         </div>
@@ -351,7 +436,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                 {users
-                                    .filter(u => u.department_id === selectedDeptId)
+                                    .filter(u => selectedDeptId === 'unassigned' ? !u.department_id : u.department_id === selectedDeptId)
                                     .filter(u => u.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
                                     .sort((a) => a.role === 'HEAD' ? -1 : 1)
                                     .map(user => (
@@ -382,8 +467,7 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                                             </td>
                                             <td className="px-8 py-6">
                                                 <span className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest border-2 ${user.role === 'SUPER_ADMIN' ? 'bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/10' :
-                                                    user.role === 'HEAD' ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-500 border-orange-100 dark:border-orange-500/10' :
-                                                        'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent'
+                                                    'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-500 border-orange-100 dark:border-orange-500/10'
                                                     } rounded-none`}>
                                                     {user.role}
                                                 </span>
@@ -392,17 +476,31 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                                                 {user.email}
                                             </td>
                                             <td className="px-8 py-6 text-right">
-                                                <PermissionGuard permission="user:edit">
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedUserForEdit(user);
-                                                            setIsEditModalOpen(true);
-                                                        }}
-                                                        className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-orange-600 dark:hover:text-orange-500 underline decoration-slate-200 hover:decoration-orange-500 transition-all underline-offset-4"
-                                                    >
-                                                        Edit Permissions
-                                                    </button>
-                                                </PermissionGuard>
+                                                <div className="flex items-center justify-end gap-4">
+                                                    <PermissionGuard permission="user:edit">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedUserForEdit(user);
+                                                                setIsEditModalOpen(true);
+                                                            }}
+                                                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-orange-600 dark:hover:text-orange-500 underline decoration-slate-200 hover:decoration-orange-500 transition-all underline-offset-4"
+                                                        >
+                                                            Manage Identity
+                                                        </button>
+                                                    </PermissionGuard>
+                                                    <PermissionGuard permission="user:delete">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteUser(user.id);
+                                                            }}
+                                                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-all"
+                                                        >
+                                                            Purge
+                                                        </button>
+                                                    </PermissionGuard>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -425,7 +523,31 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                             className="bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-8 cursor-pointer hover:border-orange-500 dark:hover:border-orange-600 shadow-sm hover:shadow-2xl hover:shadow-orange-500/10 transition-all rounded-none group relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 w-16 h-16 bg-slate-50 dark:bg-slate-800/50 -mr-8 -mt-8 rotate-45 group-hover:bg-orange-500 transition-colors" />
-                            <Building2 className="text-slate-400 dark:text-slate-600 group-hover:text-orange-500 mb-6 transition-colors" size={32} />
+                            <div className="flex justify-between items-start mb-6">
+                                <Building2 className="text-slate-400 dark:text-slate-600 group-hover:text-orange-500 transition-colors" size={32} />
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all z-10">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedDeptForEdit(dept);
+                                            setNewDeptName(dept.name);
+                                            setIsDeptModalOpen(true);
+                                        }}
+                                        className="p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-orange-600 transition-colors"
+                                    >
+                                        <Settings size={14} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteDept(dept.id);
+                                        }}
+                                        className="p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-600 transition-colors"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            </div>
                             <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-500 transition-colors">
                                 {dept.name}
                             </h3>
@@ -439,17 +561,38 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                             </div>
                         </div>
                     ))}
+
+                    {showUnassigned && (
+                        <div
+                            onClick={() => setSelectedDeptId('unassigned')}
+                            className="bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 p-8 cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 transition-all rounded-none group relative overflow-hidden"
+                        >
+                            <Users className="text-slate-300 dark:text-slate-700 group-hover:text-slate-500 mb-6 transition-colors" size={32} />
+                            <h3 className="text-xl font-black text-slate-400 dark:text-slate-500 tracking-tight mb-2 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+                                Unassigned
+                            </h3>
+                            <div className="flex items-center justify-between mt-4">
+                                <span className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.2em]">Awaiting Deployment</span>
+                                <span className="text-2xl font-black text-slate-400 dark:text-slate-500 group-hover:scale-125 transition-transform">{unassignedMembers.length}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
             <CreateDeptModal
                 isOpen={isDeptModalOpen}
-                onClose={() => setIsDeptModalOpen(false)}
+                onClose={() => {
+                    setIsDeptModalOpen(false);
+                    setSelectedDeptForEdit(null);
+                    setNewDeptName('');
+                }}
                 onSubmit={handleCreateDept}
-                newDeptName={newDeptName}
-                setNewDeptName={setNewDeptName}
+                deptName={newDeptName}
+                setDeptName={setNewDeptName}
                 loading={deptLoading}
                 error={error}
+                isEditing={!!selectedDeptForEdit}
             />
 
             <CreateUserModal
@@ -470,11 +613,32 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                 isOpen={isRoleModalOpen}
                 onClose={() => setIsRoleModalOpen(false)}
                 onSave={async (roleData) => {
-                    const { error } = await supabase.from('roles').insert([roleData]);
-                    if (error) {
-                        console.error('Role Blueprint Error:', error);
-                        throw error;
+                    try {
+                        if (roleData.id) {
+                            const { error } = await supabase
+                                .from('roles')
+                                .update({ name: roleData.name, permissions: roleData.permissions })
+                                .eq('id', roleData.id);
+                            if (error) throw error;
+                        } else {
+                            const { error } = await supabase.from('roles').insert([roleData]);
+                            if (error) throw error;
+                        }
+                        await fetchRoles();
+                    } catch (err: any) {
+                        console.error('Role Blueprint Error:', err);
+                        if (err.status === 409 || err.code === '23505') {
+                            throw new Error('A role with this name already exists.');
+                        }
+                        throw err;
                     }
+                }}
+                onDelete={async (roleId) => {
+                    const { error } = await supabase
+                        .from('roles')
+                        .delete()
+                        .eq('id', roleId);
+                    if (error) throw error;
                     await fetchRoles();
                 }}
                 existingRoles={roles}

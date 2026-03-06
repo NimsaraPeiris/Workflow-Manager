@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Shield, Plus, X, ChevronRight } from 'lucide-react';
+import { Loader2, Shield, Plus, X, ChevronRight, Settings } from 'lucide-react';
 import { PERMISSION_MAP, getCategoryKeys } from '../../lib/permissions';
 
 interface RoleManagementModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (role: { name: string; permissions: string[] }) => Promise<void>;
+    onSave: (role: { id?: string; name: string; permissions: string[] }) => Promise<void>;
+    onDelete?: (roleId: string) => Promise<void>;
     existingRoles: any[];
 }
 
@@ -14,8 +15,10 @@ export const RoleManagementModal = ({
     isOpen,
     onClose,
     onSave,
+    onDelete,
     existingRoles
 }: RoleManagementModalProps) => {
+    const [editingRole, setEditingRole] = useState<any>(null);
     const [name, setName] = useState('');
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -45,13 +48,38 @@ export const RoleManagementModal = ({
         setLoading(true);
         setError('');
         try {
-            await onSave({ name, permissions: selectedPermissions });
+            await onSave({
+                id: editingRole?.id,
+                name,
+                permissions: selectedPermissions
+            });
             setName('');
             setSelectedPermissions([]);
+            setEditingRole(null);
             setView('list');
         } catch (err: any) {
             console.error('Save failed:', err);
-            setError(err.message || 'Blueprint synchronization failed. Database rejected the payload.');
+            setError(err.message || 'Blueprint synchronization failed.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEdit = (role: any) => {
+        setEditingRole(role);
+        setName(role.name);
+        setSelectedPermissions(role.permissions || []);
+        setView('create');
+    };
+
+    const handleDelete = async (roleId: string) => {
+        if (!onDelete || !window.confirm('Are you sure you want to delete this role blueprint? This may affect users currently assigned to this role.')) return;
+
+        setLoading(true);
+        try {
+            await onDelete(roleId);
+        } catch (err: any) {
+            setError(err.message || 'Deletion failed.');
         } finally {
             setLoading(false);
         }
@@ -83,10 +111,18 @@ export const RoleManagementModal = ({
                         {view === 'list' ? (
                             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white dark:bg-slate-900">
                                 <div className="space-y-6">
+                                    {error && (
+                                        <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-none transition-colors">
+                                            {error}
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center">
                                         <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Organizational Roles</h3>
                                         <button
                                             onClick={() => {
+                                                setEditingRole(null);
+                                                setName('');
+                                                setSelectedPermissions([]);
                                                 setView('create');
                                                 setError('');
                                             }}
@@ -99,13 +135,29 @@ export const RoleManagementModal = ({
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {existingRoles.map(role => (
-                                            <div key={role.id} className="p-5 border-2 border-slate-100 dark:border-slate-800 rounded-none bg-white dark:bg-slate-800/40 hover:border-orange-500/20 dark:hover:border-orange-500/40 transition-all group">
+                                            <div key={role.id} className="p-5 border-2 border-slate-100 dark:border-slate-800 rounded-none bg-white dark:bg-slate-800/40 hover:border-orange-500/20 dark:hover:border-orange-500/40 transition-all group relative">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="p-2 bg-orange-50 dark:bg-orange-900/10 rounded-none">
                                                             <Shield size={20} className="text-orange-600" />
                                                         </div>
                                                         <span className="font-bold text-slate-900 dark:text-white">{role.name}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleEdit(role)}
+                                                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-orange-600 transition-colors"
+                                                            title="Edit Blueprint"
+                                                        >
+                                                            <Settings size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(role.id)}
+                                                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-600 transition-colors"
+                                                            title="Delete Blueprint"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
@@ -141,7 +193,9 @@ export const RoleManagementModal = ({
                                                 >
                                                     <ChevronRight className="rotate-180" size={20} />
                                                 </button>
-                                                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em]">Blueprint Configuration</h3>
+                                                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.2em]">
+                                                    {editingRole ? 'Edit Blueprint' : 'Blueprint Configuration'}
+                                                </h3>
                                             </div>
 
                                             <div className="space-y-2">
@@ -232,7 +286,7 @@ export const RoleManagementModal = ({
                                         disabled={loading || !name}
                                         className="flex-1 px-8 py-4 bg-orange-600 text-white font-bold rounded-none hover:bg-orange-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 transition-all shadow-xl shadow-orange-200 dark:shadow-none flex items-center justify-center gap-3"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" size={20} /> : "Save Role Blueprint"}
+                                        {loading ? <Loader2 className="animate-spin" size={20} /> : (editingRole ? "Update Blueprint" : "Save Role Blueprint")}
                                     </button>
                                 </div>
                             </form>
@@ -243,3 +297,4 @@ export const RoleManagementModal = ({
         </AnimatePresence>
     );
 };
+

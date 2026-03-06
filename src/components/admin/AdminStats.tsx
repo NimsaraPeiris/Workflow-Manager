@@ -10,7 +10,7 @@ export const AdminStats = ({ departmentsCount, profilesCount, headsCount }: Admi
     const stats = [
         { label: 'Total Departments', value: departmentsCount, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/10' },
         { label: 'Total Members', value: profilesCount, icon: Users, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/10' },
-        { label: 'Dept Heads', value: headsCount, icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/10' },
+        { label: 'Privileged Personnel', value: headsCount, icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/10' },
     ];
 
     return (

@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Mail, User as UserIcon, Building2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, createAdminClient } from '../lib/supabaseClient';
 import type { Department } from '../types';
-import { auditLogger } from '../lib/auditLogger';
 
 interface RegisterPageProps {
     onSwitchToLogin: () => void;
     onRegisterSuccess: (user: any) => void;
 }
 
-export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: RegisterPageProps) {
+export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
@@ -70,7 +69,8 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
         }
 
         try {
-            const { data, error: authError } = await supabase.auth.signUp({
+            const adminClient = createAdminClient();
+            const { data, error: authError } = await adminClient.auth.signUp({
                 email,
                 password,
                 options: {
@@ -83,18 +83,14 @@ export default function RegisterPage({ onSwitchToLogin, onRegisterSuccess }: Reg
             });
 
             if (authError) {
-                setError(authError.message);
-            } else if (data.user) {
-                if (data.session) {
-                    await auditLogger.log({
-                        userId: data.user.id,
-                        action: 'USER_LOGIN', // Initial registration also counts as first login
-                        entityType: 'Profile'
-                    });
-                    onRegisterSuccess(data.user);
+                if (authError.status === 409) {
+                    setError('This email address is already registered. Please sign in instead.');
                 } else {
-                    setError('Registration successful! Please check your email for confirmation.');
+                    setError(authError.message);
                 }
+            } else if (data.user) {
+                setError('Registration successful! You can now sign in with your credentials.');
+                // We do not call onRegisterSuccess(data.user) here to prevent auto-login
             }
         } catch (err) {
             setError('An unexpected error occurred');

@@ -34,11 +34,11 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                     className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800/50 px-3 py-1.5 border border-gray-200 dark:border-slate-700 cursor-pointer lg:cursor-default rounded-none transition-all hover:border-slate-300 dark:hover:border-slate-600"
                 >
                     <div className="text-right hidden sm:block">
+                        <p className="text-[10px] text-gray-500 dark:text-slate-400 uppercase tracking-widest font-black mt-0.5">
+                            {user.user_metadata?.role || 'User'} • {user.user_metadata?.full_name || 'General'}
+                        </p>
                         <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
                             {user.user_metadata?.email}
-                        </p>
-                        <p className="text-[10px] text-gray-500 dark:text-slate-400 uppercase tracking-widest font-black mt-0.5">
-                            {user.user_metadata?.role === 'HEAD' ? 'Head' : 'Employee'} • {user.user_metadata?.full_name || 'General'}
                         </p>
                     </div>
                     <div className="w-8 h-8 bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-400 rounded-none">
@@ -65,7 +65,7 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                                             {user.user_metadata?.full_name || 'System User'}
                                         </p>
                                         <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">
-                                            {user.user_metadata?.role === 'HEAD' ? 'Department Head' : 'Employee'}
+                                            {user.user_metadata?.role || 'User'}
                                         </p>
                                     </div>
                                 </div>
@@ -77,7 +77,7 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                                     </div>
                                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                         <Shield size={14} className="text-slate-400 dark:text-slate-500" />
-                                        <span className="text-xs">{user.user_metadata?.role === 'HEAD' ? 'Premium Access' : 'Standard Access'}</span>
+                                        <span className="text-xs">Organizational Identity</span>
                                     </div>
                                 </div>
 

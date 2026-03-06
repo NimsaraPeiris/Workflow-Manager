@@ -179,7 +179,7 @@ function AppContent() {
 
         if (appRole === 'SUPER_ADMIN') {
             // See all teams
-        } else if (hasPermission(userProfile, 'task:view_dept') && deptId) {
+        } else if (hasPermission(userProfile, 'team:view_dept') && deptId) {
             query = query.eq('department_id', deptId);
         } else if (userProfile.team_id) {
             query = query.eq('id', userProfile.team_id);
@@ -399,6 +399,7 @@ function AppContent() {
                     setSelectedTaskId(null);
                     setCurrentView('dashboard');
                 }}
+                user={user}
             />
 
             <main className="lg:ml-72 pt-20 min-h-screen overflow-x-hidden">

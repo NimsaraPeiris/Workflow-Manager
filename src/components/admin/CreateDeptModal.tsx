@@ -5,20 +5,22 @@ interface CreateDeptModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (e: React.FormEvent) => void;
-    newDeptName: string;
-    setNewDeptName: (name: string) => void;
+    deptName: string;
+    setDeptName: (name: string) => void;
     loading: boolean;
     error: string;
+    isEditing?: boolean;
 }
 
 export const CreateDeptModal = ({
     isOpen,
     onClose,
     onSubmit,
-    newDeptName,
-    setNewDeptName,
+    deptName,
+    setDeptName,
     loading,
-    error
+    error,
+    isEditing
 }: CreateDeptModalProps) => {
     return (
         <AnimatePresence>
@@ -35,8 +37,12 @@ export const CreateDeptModal = ({
                     >
                         <form onSubmit={onSubmit} className="p-8 space-y-6">
                             <div>
-                                <h2 className="text-2xl text-slate-900 dark:text-white font-bold tracking-tight">Create Department</h2>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm">Add a new administrative unit to your organization.</p>
+                                <h2 className="text-2xl text-slate-900 dark:text-white font-bold tracking-tight">
+                                    {isEditing ? 'Edit Department' : 'Create Department'}
+                                </h2>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                                    {isEditing ? 'Modify administrative unit details.' : 'Add a new administrative unit to your organization.'}
+                                </p>
                             </div>
 
                             {error && <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs border border-red-100 dark:border-red-900/30 rounded-none">{error}</div>}
@@ -46,8 +52,8 @@ export const CreateDeptModal = ({
                                 <input
                                     required
                                     type="text"
-                                    value={newDeptName}
-                                    onChange={(e) => setNewDeptName(e.target.value)}
+                                    value={deptName}
+                                    onChange={(e) => setDeptName(e.target.value)}
                                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white outline-none transition-all rounded-none"
                                     placeholder="e.g. Sales & Marketing"
                                 />
@@ -66,7 +72,7 @@ export const CreateDeptModal = ({
                                     disabled={loading}
                                     className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 dark:disabled:bg-slate-800 text-white font-medium transition-all shadow-lg dark:shadow-none shadow-orange-100 flex items-center justify-center"
                                 >
-                                    {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Dept"}
+                                    {loading ? <Loader2 className="animate-spin" size={20} /> : (isEditing ? "Update Dept" : "Create Dept")}
                                 </button>
                             </div>
                         </form>

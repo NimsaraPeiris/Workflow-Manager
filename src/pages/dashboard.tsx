@@ -261,8 +261,8 @@ export default function DashboardPage({
                 onDeptSelect={onDeptSelect}
             />
 
-            {/* OVERVIEW MODE: Only show performance tiles on Dashboard view */}
-            {!filterDeptId && !loading && currentView === 'dashboard' && (
+            {/* OVERVIEW MODE: Only show performance tiles on Dashboard view when no filter is active */}
+            {!filterDeptId && !filterTeamId && !loading && currentView === 'dashboard' && (
                 <div className="space-y-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="h-8 w-1 bg-orange-600 rounded-none" />
@@ -298,8 +298,8 @@ export default function DashboardPage({
                 </div>
             )}
 
-            {/* DEPARTMENT VIEW or HISTORY VIEW: Show task lists */}
-            {(filterDeptId || currentView === 'approved' || currentView === 'cancelled') && (
+            {/* DEPARTMENT/TEAM VIEW or HISTORY VIEW: Show task lists */}
+            {(filterDeptId || filterTeamId || currentView === 'approved' || currentView === 'cancelled') && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {highPriorityTasks.length > 0 && (
                         <div className="space-y-4">
@@ -319,7 +319,7 @@ export default function DashboardPage({
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                {highPriorityTasks.length > 0 ? 'General Tasks' : 'All Department Tasks'}
+                                {filterTeamId ? 'Detailed Squad Workload' : (highPriorityTasks.length > 0 ? 'General Tasks' : 'All Department Tasks')}
                             </h2>
                             <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-none border border-slate-100 dark:border-slate-800 transition-colors">
                                 {normalTasks.length} {normalTasks.length === 1 ? 'Task' : 'Tasks'}
