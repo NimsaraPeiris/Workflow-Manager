@@ -1,6 +1,7 @@
 import { Clock, Tag } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { Task, TaskStatus } from '../../types';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 interface TaskMainContentProps {
     task: Task;
@@ -10,6 +11,39 @@ interface TaskMainContentProps {
 }
 
 export const TaskMainContent = ({ task, getBadgeVariant, canEdit, onDateUpdate }: TaskMainContentProps) => {
+    const getDeadlineLabel = () => {
+        if (!task.due_date) return null;
+
+        const now = startOfDay(new Date());
+        const due = startOfDay(new Date(task.due_date));
+        const diffDays = differenceInCalendarDays(due, now);
+
+        if (diffDays < 0) {
+            return (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-bold bg-rose-50 text-rose-600 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+                    Deadline expired
+                </span>
+            );
+        }
+
+        if (task.status === 'IN_PROGRESS') {
+            if (diffDays === 0) {
+                return (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-bold bg-orange-50 text-orange-600 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30">
+                        Due today
+                    </span>
+                );
+            }
+            return (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-bold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30">
+                    {diffDays} days remaining
+                </span>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-8 rounded-none transition-colors">
             <div className="flex items-center gap-3 mb-6">
@@ -17,6 +51,7 @@ export const TaskMainContent = ({ task, getBadgeVariant, canEdit, onDateUpdate }
                 <Badge variant={task.priority === 'HIGH' ? 'rose' : task.priority === 'MEDIUM' ? 'yellow' : 'green'}>
                     {task.priority} Priority
                 </Badge>
+                {getDeadlineLabel()}
             </div>
 
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight tracking-tight">{task.title}</h1>

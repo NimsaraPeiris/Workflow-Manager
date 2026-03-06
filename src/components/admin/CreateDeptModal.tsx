@@ -64,7 +64,7 @@ export const CreateDeptModal = ({
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 dark:disabled:bg-slate-800 text-white font-medium transition-all shadow-lg dark:shadow-none shadow-orange-100 flex items-center justify-center rounded-full"
+                                    className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 dark:disabled:bg-slate-800 text-white font-medium transition-all shadow-lg dark:shadow-none shadow-orange-100 flex items-center justify-center"
                                 >
                                     {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Dept"}
                                 </button>

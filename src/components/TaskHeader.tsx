@@ -1,10 +1,10 @@
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { CreateTaskButton } from './permissions/tasks/CreateTaskButton';
 
 interface TaskHeaderProps {
     searchQuery: string;
     setSearchQuery: (query: string) => void;
     onNewTask: () => void;
-    userRole: string;
     statusFilter?: string;
     setStatusFilter?: (status: string) => void;
     currentView: string;
@@ -17,7 +17,6 @@ export const TaskHeader = ({
     searchQuery,
     setSearchQuery,
     onNewTask,
-    userRole,
     statusFilter,
     setStatusFilter,
     currentView,
@@ -77,14 +76,8 @@ export const TaskHeader = ({
                     <option value="CANCEL_REQUESTED">Cancel Requested</option>
                 </select>
 
-                {userRole === 'HEAD' && currentView === 'dashboard' && (
-                    <button
-                        onClick={onNewTask}
-                        className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 transition-all shadow-lg shadow-orange-200 dark:shadow-orange-900/20 text-sm font-bold active:scale-95"
-                    >
-                        <Plus size={18} />
-                        <span>New Task</span>
-                    </button>
+                {currentView === 'dashboard' && (
+                    <CreateTaskButton onClick={onNewTask} />
                 )}
             </div>
         </div>

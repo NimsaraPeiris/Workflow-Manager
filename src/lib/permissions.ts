@@ -11,7 +11,8 @@ export const PERMISSION_MAP = {
     tasks: {
         label: 'Task Management',
         micro: [
-            { key: 'task:view', label: 'View All Tasks' },
+            { key: 'task:view', label: 'View All Tasks (Global)' },
+            { key: 'task:view_dept', label: 'View Department Tasks' },
             { key: 'task:create', label: 'Create New Tasks' },
             { key: 'task:edit', label: 'Modify Task Details' },
             { key: 'task:delete', label: 'Delete/Cancel Tasks' },
@@ -39,7 +40,7 @@ export const PERMISSION_MAP = {
 
 export type PermissionKey =
     | 'dept:view' | 'dept:create' | 'dept:edit' | 'dept:delete'
-    | 'task:view' | 'task:create' | 'task:edit' | 'task:delete' | 'task:assign' | 'task:approve'
+    | 'task:view' | 'task:view_dept' | 'task:create' | 'task:edit' | 'task:delete' | 'task:assign' | 'task:approve'
     | 'user:view' | 'user:create' | 'user:edit' | 'user:delete'
     | 'audit:view' | 'settings:manage';
 
@@ -51,10 +52,16 @@ export const hasPermission = (user: any, permission: PermissionKey): boolean => 
     if (!user) return false;
 
     // Super-access for SUPER_ADMIN role
-    const role = user.user_metadata?.role || user.role;
-    if (role === 'SUPER_ADMIN') return true;
+    // We check both the database profile role and user_metadata
+    // We ignore 'authenticated' which is a technical Supabase role
+    const appRole = (user.role && user.role !== 'authenticated')
+        ? user.role
+        : user.user_metadata?.role;
 
-    const permissions = user.user_metadata?.permissions || user.permissions || [];
+    if (appRole === 'SUPER_ADMIN') return true;
+
+    const permissions = user.permissions || user.user_metadata?.permissions || [];
+    if (!Array.isArray(permissions)) return false;
     return permissions.includes(permission);
 };
 

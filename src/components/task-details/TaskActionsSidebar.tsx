@@ -1,11 +1,11 @@
 import { User as UserIcon, Tag } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { PermissionGuard } from '../auth/PermissionGuard';
 import type { Task, TaskStatus } from '../../types';
 
 interface TaskActionsSidebarProps {
     task: Task;
     currentUser: any;
-    isHead: boolean;
     updating: boolean;
     onUpdateStatus: (status: TaskStatus) => void;
     onShowAssignModal: () => void;
@@ -16,7 +16,6 @@ interface TaskActionsSidebarProps {
 export const TaskActionsSidebar = ({
     task,
     currentUser,
-    isHead,
     updating,
     onUpdateStatus,
     onShowAssignModal,
@@ -48,46 +47,72 @@ export const TaskActionsSidebar = ({
             </div>
 
             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4 transition-colors">
-                {isHead && currentUser.user_metadata?.department_id === task.department_id && task.status === 'CREATED' && (
-                    <Button onClick={() => onUpdateStatus('ACCEPTED')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">Accept Task</Button>
-                )}
-                {isHead && currentUser.user_metadata?.department_id === task.department_id && (task.status === 'ACCEPTED' || task.status === 'CREATED' || task.status === 'ASSIGNED') && (
-                    <Button onClick={() => onShowAssignModal()} variant="secondary" className="w-full h-12 text-sm font-bold dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 active:scale-95 transition-all">{task.assignee_id ? 'Reassign' : 'Assign'}</Button>
-                )}
+                {/* Accept Task */}
+                <PermissionGuard permission="task:approve">
+                    {currentUser.user_metadata?.department_id === task.department_id && task.status === 'CREATED' && (
+                        <Button onClick={() => onUpdateStatus('ACCEPTED')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">Accept Task</Button>
+                    )}
+                </PermissionGuard>
+
+                {/* Assign / Reassign */}
+                <PermissionGuard permission="task:assign">
+                    {currentUser.user_metadata?.department_id === task.department_id && (task.status === 'ACCEPTED' || task.status === 'CREATED' || task.status === 'ASSIGNED') && (
+                        <Button onClick={() => onShowAssignModal()} variant="secondary" className="w-full h-12 text-sm font-bold dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 active:scale-95 transition-all">{task.assignee_id ? 'Reassign' : 'Assign'}</Button>
+                    )}
+                </PermissionGuard>
+
+                {/* Employee Self-Actions */}
                 {currentUser.id === task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED') && (
                     <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">Start Working</Button>
                 )}
                 {currentUser.id === task.assignee_id && task.status === 'IN_PROGRESS' && (
-                    <Button onClick={() => onUpdateStatus('SUBMITTED')} variant="secondary" loading={updating} className="w-full h-12 text-sm font-bold active:scale-95">Submit Task</Button>
-                )}
-                {(currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN') && task.status === 'SUBMITTED' && (
-                    <div className="grid grid-cols-2 gap-3">
-                        <Button onClick={() => onShowDecisionModal('APPROVED')} variant="secondary" loading={updating} className="h-12 text-sm font-bold active:scale-95">Approve</Button>
-                        <Button onClick={() => onShowDecisionModal('REJECTED')} variant="danger" loading={updating} className="h-12 text-sm font-bold active:scale-95">Reject</Button>
-                    </div>
-                )}
-                {(currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN') && task.status === 'CANCEL_REQUESTED' && (
-                    <div className="space-y-3 p-5 bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-none animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm transition-colors">
-                        <div className="space-y-1 mb-2">
-                            <p className="text-[10px] text-orange-800 dark:text-orange-400 font-black uppercase tracking-wider">Cancellation Requested</p>
-                            {cancellationRequester && (
-                                <p className="text-[10px] text-orange-600 dark:text-orange-500 font-bold italic">by {cancellationRequester}</p>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button onClick={() => onUpdateStatus('CANCELLED')} variant="danger" loading={updating} className="h-10 text-xs font-bold active:scale-95">Confirm</Button>
-                            <Button onClick={() => onUpdateStatus('ASSIGNED')} variant="outline" loading={updating} className="h-10 text-xs font-bold dark:border-slate-700 dark:text-slate-300 active:scale-95">Keep Task</Button>
-                        </div>
-                    </div>
+                    <Button onClick={() => onUpdateStatus('SUBMITTED')} loading={updating} className="w-full h-12 text-sm font-bold active:scale-95">Submit</Button>
                 )}
 
+                {/* Approve / Reject */}
+                {task.status === 'SUBMITTED' && (
+                    <PermissionGuard permission="task:approve">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button onClick={() => onShowDecisionModal('APPROVED')} variant="secondary" loading={updating} className="h-12 text-sm font-bold active:scale-95">Approve</Button>
+                            <Button onClick={() => onShowDecisionModal('REJECTED')} variant="danger" loading={updating} className="h-12 text-sm font-bold active:scale-95">Reject</Button>
+                        </div>
+                    </PermissionGuard>
+                )}
+
+                {/* Cancellation Requests */}
+                {task.status === 'CANCEL_REQUESTED' && (
+                    <PermissionGuard permission="task:approve">
+                        <div className="space-y-3 p-5 bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-none animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm transition-colors">
+                            <div className="space-y-1 mb-2">
+                                <p className="text-[10px] text-orange-800 dark:text-orange-400 font-black uppercase tracking-wider">Cancellation Requested</p>
+                                {cancellationRequester && (
+                                    <p className="text-[10px] text-orange-600 dark:text-orange-500 font-bold italic">by {cancellationRequester}</p>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button onClick={() => onUpdateStatus('CANCELLED')} variant="danger" loading={updating} className="h-10 text-xs font-bold active:scale-95">Confirm</Button>
+                                <Button onClick={() => onUpdateStatus('ASSIGNED')} variant="outline" loading={updating} className="h-10 text-xs font-bold dark:border-slate-700 dark:text-slate-300 active:scale-95">Keep Task</Button>
+                            </div>
+                        </div>
+                    </PermissionGuard>
+                )}
+
+                {/* General Cancel / Request Cancellation */}
                 {(task.status === 'CREATED' || task.status === 'ACCEPTED' || task.status === 'ASSIGNED' || task.status === 'IN_PROGRESS') && (
                     <div className="pt-2">
-                        {currentUser.id === task.creator_id || currentUser.user_metadata?.role === 'SUPER_ADMIN' ? (
+                        {/* Creator or Super Admin can cancel directly */}
+                        <PermissionGuard permission="task:delete">
                             <Button onClick={() => onUpdateStatus('CANCELLED')} variant="outline" className="w-full h-12 text-xs font-bold border-rose-100 text-rose-600 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-950/20 transition-all active:scale-95">Cancel Task</Button>
-                        ) : isHead ? (
-                            <Button onClick={() => onUpdateStatus('CANCEL_REQUESTED')} variant="outline" className="w-full h-12 text-xs font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/30 dark:hover:bg-orange-950/20 transition-all active:scale-95" loading={updating}>Request Cancellation</Button>
-                        ) : null}
+                        </PermissionGuard>
+
+                        {/* If not can delete, maybe can request cancellation (Head level) */}
+                        <div className="mt-2">
+                            <PermissionGuard permission="task:view_dept">
+                                {currentUser.id !== task.creator_id && (
+                                    <Button onClick={() => onUpdateStatus('CANCEL_REQUESTED')} variant="outline" className="w-full h-12 text-xs font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/30 dark:hover:bg-orange-950/20 transition-all active:scale-95" loading={updating}>Request Cancellation</Button>
+                                )}
+                            </PermissionGuard>
+                        </div>
                     </div>
                 )}
             </div>

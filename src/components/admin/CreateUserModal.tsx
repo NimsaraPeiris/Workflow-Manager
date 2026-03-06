@@ -112,7 +112,7 @@ export const CreateUserModal = ({
                                                 value={newUser.fullName}
                                                 onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
                                                 className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-orange-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white"
-                                                placeholder="John Doe"
+                                                placeholder="Enter Here"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -123,7 +123,7 @@ export const CreateUserModal = ({
                                                 value={newUser.email}
                                                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                                                 className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-orange-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white"
-                                                placeholder="john@company.com"
+                                                placeholder="name@company.com"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -151,9 +151,21 @@ export const CreateUserModal = ({
                                             </select>
                                         </div>
                                         <div className="space-y-2 md:col-span-2 lg:col-span-1">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Role Blueprint</label>
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Access Level</label>
                                             <select
                                                 required
+                                                value={newUser.role}
+                                                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                                                className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-orange-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                            >
+                                                <option value="EMPLOYEE" className="dark:bg-slate-900">Employee Tier</option>
+                                                <option value="HEAD" className="dark:bg-slate-900">Management Tier (Head)</option>
+                                                <option value="SUPER_ADMIN" className="dark:bg-slate-900">Technical Administrator</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Role Blueprint</label>
+                                            <select
                                                 value={newUser.roleId}
                                                 onChange={(e) => {
                                                     const role = roles.find(r => r.id === e.target.value);
@@ -165,7 +177,7 @@ export const CreateUserModal = ({
                                                 }}
                                                 className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-2 border-transparent focus:bg-white dark:focus:bg-slate-800 focus:border-orange-500 outline-none transition-all rounded-none font-bold text-slate-900 dark:text-white appearance-none cursor-pointer"
                                             >
-                                                <option value="" className="dark:bg-slate-900">Inherit Permissions</option>
+                                                <option value="" className="dark:bg-slate-900">Custom Permissions Only</option>
                                                 {roles.map(r => <option key={r.id} value={r.id} className="dark:bg-slate-900">{r.name}</option>)}
                                             </select>
                                         </div>
@@ -251,7 +263,7 @@ export const CreateUserModal = ({
                                     {loading ? <Loader2 className="animate-spin" size={20} /> : (
                                         <>
                                             Provision Account
-                                            <div className="w-2 h-2 rounded-none bg-green-600 animate-pulse shadow-glow" />
+                                            <div className="w-2 h-2 rounded bg-green-600 animate-pulse shadow-glow" />
                                         </>
                                     )}
                                 </button>

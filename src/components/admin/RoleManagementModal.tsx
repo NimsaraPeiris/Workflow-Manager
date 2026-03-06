@@ -20,6 +20,7 @@ export const RoleManagementModal = ({
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [view, setView] = useState<'list' | 'create'>('list');
+    const [error, setError] = useState('');
 
     const togglePermission = (key: string) => {
         setSelectedPermissions(prev =>
@@ -30,6 +31,7 @@ export const RoleManagementModal = ({
     const toggleCategory = (category: keyof typeof PERMISSION_MAP) => {
         const categoryKeys = getCategoryKeys(category);
         const allSelected = categoryKeys.every(k => selectedPermissions.includes(k));
+        setError('');
 
         if (allSelected) {
             setSelectedPermissions(prev => prev.filter(k => !categoryKeys.includes(k as any)));
@@ -41,11 +43,15 @@ export const RoleManagementModal = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError('');
         try {
             await onSave({ name, permissions: selectedPermissions });
             setName('');
             setSelectedPermissions([]);
             setView('list');
+        } catch (err: any) {
+            console.error('Save failed:', err);
+            setError(err.message || 'Blueprint synchronization failed. Database rejected the payload.');
         } finally {
             setLoading(false);
         }
@@ -80,7 +86,10 @@ export const RoleManagementModal = ({
                                     <div className="flex justify-between items-center">
                                         <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Organizational Roles</h3>
                                         <button
-                                            onClick={() => setView('create')}
+                                            onClick={() => {
+                                                setView('create');
+                                                setError('');
+                                            }}
                                             className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-orange-600 text-white text-xs font-bold rounded-none hover:bg-slate-800 dark:hover:bg-orange-700 transition-all shadow-lg dark:shadow-none"
                                         >
                                             <Plus size={16} />
@@ -119,6 +128,11 @@ export const RoleManagementModal = ({
                                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar overscroll-contain">
                                     <div className="space-y-10">
                                         <div className="space-y-6">
+                                            {error && (
+                                                <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-none transition-colors">
+                                                    {error}
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     type="button"

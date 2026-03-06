@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Clock, ChevronRight, User as UserIcon, Building2, Flag } from 'lucide-react';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { Task, TaskStatus } from '../types';
 import { Badge } from './ui/Badge';
 
@@ -10,6 +11,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) => {
+    // ... helper functions ... (rest of component logic)
     const getBadgeVariant = (status: TaskStatus) => {
         switch (status) {
             case 'CREATED': return 'orange';
@@ -31,8 +33,17 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
     };
 
     const isOverdue = task.due_date &&
-        new Date(task.due_date) < new Date() &&
+        startOfDay(new Date(task.due_date)) < startOfDay(new Date()) &&
         !['APPROVED', 'CANCELLED'].includes(task.status);
+
+    const getRemainingDaysText = () => {
+        if (!task.due_date || isOverdue || task.status !== 'IN_PROGRESS') return null;
+        const now = startOfDay(new Date());
+        const due = startOfDay(new Date(task.due_date));
+        const diffDays = differenceInCalendarDays(due, now);
+        if (diffDays === 0) return 'DUE TODAY';
+        return `${diffDays}d remaining`;
+    };
 
     if (variant === 'brief') {
         return (
@@ -52,7 +63,12 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                     {isOverdue && (
                         <span className="flex items-center gap-1 text-[9px] font-black text-rose-500 uppercase tracking-tighter animate-pulse">
                             <Clock size={10} />
-                            Overdue
+                            Deadline expired
+                        </span>
+                    )}
+                    {!isOverdue && task.status === 'IN_PROGRESS' && (
+                        <span className="text-[9px] font-black text-indigo-500 uppercase tracking-tighter">
+                            ({getRemainingDaysText()})
                         </span>
                     )}
                 </div>
@@ -101,7 +117,13 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                             {task.due_date && (
                                 <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-none transition-colors ${isOverdue ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 animate-pulse' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500'}`}>
                                     <Clock size={10} />
-                                    {isOverdue ? 'OVERDUE ' : ''}{new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    {isOverdue ? 'DEADLINE EXPIRED ' : ''}
+                                    {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    {!isOverdue && task.status === 'IN_PROGRESS' && (
+                                        <span className="ml-1 text-indigo-500">
+                                            ({getRemainingDaysText()})
+                                        </span>
+                                    )}
                                 </div>
                             )}
 

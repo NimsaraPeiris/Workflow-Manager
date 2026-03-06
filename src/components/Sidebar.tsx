@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../lib/ThemeContext';
-import { hasPermission } from '../lib/permissions';
+import { PermissionGuard } from './auth/PermissionGuard';
 
 
 interface SidebarProps {
@@ -23,7 +23,6 @@ interface SidebarProps {
     cancelledCount?: number;
     isOpen: boolean;
     onClose: () => void;
-    user: any;
     onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled') => void;
     currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled';
 }
@@ -40,21 +39,13 @@ export const Sidebar = ({
     cancelledCount = 0,
     isOpen,
     onClose,
-    user,
     onViewChange,
     currentView
 }: SidebarProps) => {
     const { theme, toggleTheme } = useTheme();
     const isOverview = currentView === 'dashboard' && !selectedDeptId;
 
-    const canSeeUsers = hasPermission(user, 'user:view');
-    const canSeeAudit = hasPermission(user, 'audit:view');
-
-
-
-    const userRole = user?.user_metadata?.role || user?.role;
-    const navItems = userRole !== 'EMPLOYEE' ? [
-
+    const navItems = [
         {
             id: 'overview',
             label: 'Organization Overview',
@@ -63,25 +54,28 @@ export const Sidebar = ({
             onClick: () => {
                 onDeptSelect(null);
                 onViewChange('dashboard');
-            }
+            },
+            permission: 'task:view' as const
         }
-    ] : [];
+    ];
 
     const adminItems = [
-        ...(canSeeUsers ? [{
+        {
             id: 'users',
             label: 'Teams & Permissions',
             icon: Users,
             active: currentView === 'users',
-            onClick: () => onViewChange('users')
-        }] : []),
-        ...(canSeeAudit ? [{
+            onClick: () => onViewChange('users'),
+            permission: 'user:view' as const
+        },
+        {
             id: 'audit',
             label: 'Security Logs',
             icon: ShieldCheck,
             active: currentView === 'audit',
-            onClick: () => onViewChange('audit')
-        }] : [])
+            onClick: () => onViewChange('audit'),
+            permission: 'audit:view' as const
+        }
     ];
 
 
@@ -131,23 +125,24 @@ export const Sidebar = ({
                         <div className="space-y-1">
                             <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-orange-600 uppercase tracking-[0.2em] mb-2">Main Console</p>
                             {navItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => {
-                                        item.onClick();
-                                        onClose();
-                                    }}
-                                    className={`
-                                        w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
-                                        ${item.active
-                                            ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-sm border border-slate-100 dark:border-slate-800'
-                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white'}
-                                    `}
-                                >
-                                    <item.icon size={18} className={`${item.active ? 'text-orange-600 dark:text-orange-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} transition-colors`} />
-                                    <span className="text-sm font-semibold flex-1 text-left">{item.label}</span>
-                                    {item.active && <div className="w-1.5 h-1.5 rounded-full bg-orange-600 dark:bg-orange-500 shadow-sm" />}
-                                </button>
+                                <PermissionGuard key={item.id} permission={item.permission}>
+                                    <button
+                                        onClick={() => {
+                                            item.onClick();
+                                            onClose();
+                                        }}
+                                        className={`
+                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                                            ${item.active
+                                                ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-sm border border-slate-100 dark:border-slate-800'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white'}
+                                        `}
+                                    >
+                                        <item.icon size={18} className={`${item.active ? 'text-orange-600 dark:text-orange-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} transition-colors`} />
+                                        <span className="text-sm font-semibold flex-1 text-left">{item.label}</span>
+                                        {item.active && <div className="w-1.5 h-1.5 rounded-full bg-orange-600 dark:bg-orange-500 shadow-sm" />}
+                                    </button>
+                                </PermissionGuard>
                             ))}
                         </div>
 
@@ -201,14 +196,12 @@ export const Sidebar = ({
                             </button>
                         </div>
 
-                        {/* Admin Section */}
-                        {(canSeeUsers || canSeeAudit) && (
-                            <div className="space-y-1 pt-2">
-                                <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em] mb-2">Administration</p>
+                        <div className="space-y-1 pt-2">
+                            <p className="px-3 text-[10px] font-bold text-slate-400 dark:text-orange-500 uppercase tracking-[0.2em] mb-2">Administration</p>
 
-                                {adminItems.map((item) => (
+                            {adminItems.map((item) => (
+                                <PermissionGuard key={item.id} permission={item.permission}>
                                     <button
-                                        key={item.id}
                                         onClick={() => {
                                             item.onClick();
                                             onClose();
@@ -224,9 +217,9 @@ export const Sidebar = ({
                                         <span className="text-sm font-semibold flex-1 text-left">{item.label}</span>
                                         {item.active && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-500 shadow-sm" />}
                                     </button>
-                                ))}
-                            </div>
-                        )}
+                                </PermissionGuard>
+                            ))}
+                        </div>
 
                         {/* Workflow Hub / Departments */}
                         <div className="space-y-1 pt-2">
@@ -266,7 +259,7 @@ export const Sidebar = ({
                                 ))}
 
                                 {/* External Tasks for Heads */}
-                                {userRole === 'HEAD' && (
+                                <PermissionGuard permission="task:view_dept">
                                     <button
                                         onClick={() => {
                                             onDeptSelect('EXTERNAL');
@@ -293,7 +286,7 @@ export const Sidebar = ({
                                             </span>
                                         )}
                                     </button>
-                                )}
+                                </PermissionGuard>
                             </div>
                         </div>
                     </div>

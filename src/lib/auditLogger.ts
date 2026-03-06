@@ -13,7 +13,9 @@ export type AuditAction =
     | 'DEPT_UPDATE'
     | 'DEPT_DELETE'
     | 'ROLE_CHANGE'
-    | 'USER_CREATE';
+    | 'USER_CREATE'
+    | 'USER_UPDATE'
+    | 'PERMISSION_CHANGE';
 
 /**
  * Utility to log sensitive system actions for auditing purposes.

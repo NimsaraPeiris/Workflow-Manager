@@ -28,7 +28,6 @@ describe('TaskActionsSidebar', () => {
     const mockProps = {
         task: mockTask,
         currentUser: mockUser,
-        isHead: true,
         updating: false,
         onUpdateStatus: vi.fn(),
         onShowAssignModal: vi.fn(),
@@ -48,13 +47,13 @@ describe('TaskActionsSidebar', () => {
     it('shows "Start Working" for assignee when status is ASSIGNED', () => {
         const assignedTask = { ...mockTask, status: 'ASSIGNED' as const, assignee_id: 'user-emp' };
         const empUser = { id: 'user-emp' };
-        render(<TaskActionsSidebar {...mockProps} task={assignedTask} currentUser={empUser} isHead={false} />);
+        render(<TaskActionsSidebar {...mockProps} task={assignedTask} currentUser={empUser} />);
         expect(screen.getByText('Start Working')).toBeInTheDocument();
     });
 
     it('shows "Approve" and "Reject" for creator when status is SUBMITTED', () => {
         const submittedTask = { ...mockTask, status: 'SUBMITTED' as const, creator_id: 'user-creator' };
-        const creatorUser = { id: 'user-creator' };
+        const creatorUser = { id: 'user-creator', user_metadata: {} };
         render(<TaskActionsSidebar {...mockProps} task={submittedTask} currentUser={creatorUser} />);
         expect(screen.getByText('Approve')).toBeInTheDocument();
         expect(screen.getByText('Reject')).toBeInTheDocument();

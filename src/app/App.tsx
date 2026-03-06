@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import LoginPage from '../pages/loginPage';
 import RegisterPage from '../pages/registerPage';
 import Header from '../components/Header';
@@ -7,10 +8,10 @@ import TaskDetailsPage from '../pages/taskDetails';
 import AuditLogsPage from '../pages/admin/AuditLogs';
 import UserManagementPage from '../pages/admin/UserManagement';
 import { supabase } from '../lib/supabaseClient';
-
 import { Sidebar } from '../components/Sidebar';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { ThemeProvider } from '../lib/ThemeContext';
+import { hasPermission } from '../lib/permissions';
 
 export default function App() {
     return (
@@ -36,29 +37,133 @@ function AppContent() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled'>('dashboard');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [loadingError, setLoadingError] = useState<string | null>(null);
+
+    const loadUserData = async (authUser: any, isMounted: boolean) => {
+        try {
+            if (!authUser) {
+                if (user !== null) setUser(null);
+                return;
+            }
+
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', authUser.id)
+                .maybeSingle();
+
+            let activeProfile = profile;
+
+            if (!profile && !error) {
+                // If profile is missing, attempt to provision it from auth metadata
+                console.log('Profile missing for user, attempting auto-provisioning...');
+                const { data: newProfile, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: authUser.id,
+                        full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Unknown User',
+                        department_id: authUser.user_metadata?.department_id || null,
+                        role: authUser.user_metadata?.role || 'EMPLOYEE',
+                        permissions: authUser.user_metadata?.permissions || []
+                    }])
+                    .select()
+                    .maybeSingle();
+
+                if (insertError) {
+                    console.error('Auto-provisioning failed:', insertError);
+                } else {
+                    activeProfile = newProfile;
+                    console.log('Successfully provisioned profile for', authUser.id);
+                }
+            }
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Core profile fetch failed:', error);
+            }
+
+            // Build best-available user profile
+            const combinedUser = {
+                ...authUser,
+                ...activeProfile,
+                // Fallback for role/dept if profile still doesn't exist (e.g. insert failed)
+                role: activeProfile?.role || authUser.user_metadata?.role || 'EMPLOYEE',
+                department_id: activeProfile?.department_id || authUser.user_metadata?.department_id,
+                full_name: activeProfile?.full_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0],
+                permissions: Array.isArray(activeProfile?.permissions) ? activeProfile.permissions :
+                    Array.isArray(authUser?.user_metadata?.permissions) ? authUser.user_metadata.permissions : []
+            };
+
+            // Only update if critical fields have changed to avoid loops
+            const hasChanged = !user ||
+                user.id !== combinedUser.id ||
+                user.role !== combinedUser.role ||
+                user.department_id !== combinedUser.department_id ||
+                JSON.stringify(user.permissions) !== JSON.stringify(combinedUser.permissions);
+
+            if (hasChanged) {
+                setUser(combinedUser);
+            }
+        } catch (err) {
+            console.error('Fatal error in loadUserData:', err);
+        } finally {
+            if (isMounted) setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
+        let isMounted = true;
+        let authSubscription: any = null;
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
+        // Emergency timeout to clear loading screen even if Supabase hangs
+        const timeout = setTimeout(() => {
+            if (isMounted && loading) {
+                console.warn("Auth initialization timed out, forcing loading screen off.");
+                setLoading(false);
+                setLoadingError("Initialization taking longer than expected. System fallback engaged.");
+            }
+        }, 5000);
 
-        return () => subscription.unsubscribe();
+        const init = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (isMounted) {
+                    await loadUserData(session?.user ?? null, isMounted);
+                }
+
+                const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+                    if (isMounted) {
+                        await loadUserData(session?.user ?? null, isMounted);
+                    }
+                });
+                authSubscription = subscription;
+            } catch (err) {
+                console.error("Auth init fatal error:", err);
+                if (isMounted) {
+                    setLoading(false);
+                    setLoadingError("Critical system error during startup.");
+                }
+            }
+        };
+
+        if (isMounted) init();
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timeout);
+            if (authSubscription) authSubscription.unsubscribe();
+        };
     }, []);
 
     useEffect(() => {
-        if (user) {
+        if (user && !loading) {
             fetchStats();
-            // Employees have no organization view - redirect to their department
-            if (user.user_metadata?.role === 'EMPLOYEE' && !selectedDeptId && currentView === 'dashboard') {
-                setSelectedDeptId(user.user_metadata?.department_id);
+            // Redirect based on permissions if needed
+            if (!hasPermission(user, 'task:view') && !selectedDeptId && currentView === 'dashboard') {
+                const deptId = user.department_id || user.user_metadata?.department_id;
+                if (deptId) setSelectedDeptId(deptId);
             }
         }
-    }, [user]);
+    }, [user?.id, user?.permissions?.length, user?.role, user?.department_id, loading]);
 
     // Dynamic Tab Titles
     useEffect(() => {
@@ -84,59 +189,66 @@ function AppContent() {
     }, [user, currentView, selectedTaskId]);
 
     const fetchStats = async () => {
-        const userRole = user?.user_metadata?.role;
-        const userDeptId = user?.user_metadata?.department_id;
+        if (!user) return;
+        try {
+            const canViewAll = hasPermission(user, 'task:view');
+            const canViewDept = hasPermission(user, 'task:view_dept');
+            const userDeptId = user?.department_id || user?.user_metadata?.department_id;
 
-        // 1. Fetch Departments based on role
-        let deptQuery = supabase.from('departments').select('*').order('name');
-        if (userRole !== 'SUPER_ADMIN' && userDeptId) {
-            deptQuery = deptQuery.eq('id', userDeptId);
-        }
-        const { data: depts } = await deptQuery;
-        if (depts) setDepartments(depts);
+            // 1. Fetch Departments based on permissions
+            let deptQuery = supabase.from('departments').select('*').order('name');
+            if (!canViewAll && userDeptId) {
+                deptQuery = deptQuery.eq('id', userDeptId);
+            }
+            const { data: depts } = await deptQuery;
+            if (depts) setDepartments(depts);
 
-        // 2. Fetch Tasks for statistics based on role
-        // For 'Organization View' of history, we fetch all approved/cancelled for counts
-        let taskQuery = supabase.from('tasks').select('id, department_id, priority, creator_id, assignee_id, status');
+            // 2. Fetch Tasks for statistics based on permissions
+            let taskQuery = supabase.from('tasks').select('id, department_id, priority, creator_id, assignee_id, status');
 
-        if (userRole === 'HEAD') {
-            // Include all approved/cancelled tasks for organization metrics, but only active tasks for their department
-            taskQuery = taskQuery.or(`department_id.eq.${userDeptId},creator_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
-        } else if (userRole === 'EMPLOYEE') {
-            taskQuery = taskQuery.or(`assignee_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
-        }
-        // SUPER_ADMIN sees all
+            if (canViewAll) {
+                // No filter needed, fetch all for global stats
+            } else if (canViewDept && userDeptId) {
+                // View my department tasks + tasks I created + history
+                taskQuery = taskQuery.or(`department_id.eq.${userDeptId},creator_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
+            } else if (user?.id) {
+                // Standard employee: tasks assigned to me + history
+                taskQuery = taskQuery.or(`assignee_id.eq.${user.id},status.eq.APPROVED,status.eq.CANCELLED`);
+            } else {
+                return;
+            }
 
-        const { data: tasks } = await taskQuery;
-        if (tasks) {
-            const counts: Record<string, number> = {};
-            let highCount = 0;
-            let extCount = 0;
-            let appCount = 0;
-            let canCount = 0;
+            const { data: tasks } = await taskQuery;
+            if (tasks) {
+                const counts: Record<string, number> = {};
+                let highCount = 0;
+                let extCount = 0;
+                let appCount = 0;
+                let canCount = 0;
 
-            tasks.forEach((t: any) => {
-                // Count for department sidebar
-                if (t.department_id) {
-                    counts[t.department_id] = (counts[t.department_id] || 0) + 1;
-                }
+                tasks.forEach((t: any) => {
+                    if (t.department_id) {
+                        counts[t.department_id] = (counts[t.department_id] || 0) + 1;
+                    }
 
-                // General metrics
-                if (t.priority === 'HIGH' && t.status !== 'APPROVED' && t.status !== 'CANCELLED') highCount++;
-                if (t.status === 'APPROVED') appCount++;
-                if (t.status === 'CANCELLED') canCount++;
+                    if (t.priority === 'HIGH' && t.status !== 'APPROVED' && t.status !== 'CANCELLED') highCount++;
+                    if (t.status === 'APPROVED') appCount++;
+                    if (t.status === 'CANCELLED') canCount++;
 
-                // External tasks for HEADs: created by me but NOT in my department
-                if (userRole === 'HEAD' && t.creator_id === user.id && t.department_id !== userDeptId) {
-                    extCount++;
-                }
-            });
+                    // External tasks: created by me but NOT in my department (only relevant for those without global view)
+                    if (!canViewAll && t.creator_id === user.id && t.department_id !== userDeptId) {
+                        extCount++;
+                    }
+                });
 
-            setTaskCounts(counts);
-            setHighPriorityCount(highCount);
-            setExternalTaskCount(extCount);
-            setApprovedCount(appCount);
-            setCancelledCount(canCount);
+                setTaskCounts(counts);
+                setHighPriorityCount(highCount);
+                setExternalTaskCount(extCount);
+                setApprovedCount(appCount);
+                setCancelledCount(canCount);
+            }
+        } catch (err) {
+            console.error("Stats fetching failed:", err);
         }
     };
 
@@ -156,11 +268,30 @@ function AppContent() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors p-6">
                 <div className="animate-pulse flex flex-col items-center gap-6">
-                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-full rotate-45 shadow-2xl"></div>
-                    <div className="h-2 w-32 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                    <div className="w-12 h-12 bg-orange-600 dark:bg-orange-500 rounded-none rotate-45 shadow-2xl"></div>
+                    <div className="h-1 w-32 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
                 </div>
+                {loadingError && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-12 text-center space-y-4"
+                    >
+                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{loadingError}</p>
+                        <button
+                            onClick={() => {
+                                localStorage.clear();
+                                sessionStorage.clear();
+                                window.location.reload();
+                            }}
+                            className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
+                        >
+                            Reset System Access
+                        </button>
+                    </motion.div>
+                )}
             </div>
         );
     }
@@ -199,7 +330,6 @@ function AppContent() {
                 highPriorityCount={highPriorityCount}
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
-                user={user}
                 externalTaskCount={externalTaskCount}
                 approvedCount={approvedCount}
                 cancelledCount={cancelledCount}

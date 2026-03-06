@@ -128,8 +128,8 @@ export default function LoginPage({ onLogin, onSwitchToRegister }: LoginPageProp
                                         await authBridge.signInWithExternalToken(token);
                                         const { data: { user } } = await supabase.auth.getUser();
                                         if (user) onLogin(user);
-                                    } catch (err) {
-                                        setError(err.message);
+                                    } catch (err: any) {
+                                        setError(err.message || 'SSO authentication failed');
                                     } finally {
                                         setLoading(false);
                                     }

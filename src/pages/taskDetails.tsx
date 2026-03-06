@@ -5,6 +5,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { hasPermission } from '../lib/permissions';
 import type { Task, TaskStatus } from '../types';
 import { Button } from '../components/ui/Button';
 import { auditLogger } from '../lib/auditLogger';
@@ -38,13 +39,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({ title: '', description: '', confirmText: '', variant: 'primary' as 'primary' | 'danger' | 'warning' });
 
-    const userRole = currentUser?.user_metadata?.role;
-    const isHead = userRole === 'SUPER_ADMIN' || userRole === 'SUPERVISOR' || userRole === 'HEAD';
+    const canAssign = hasPermission(currentUser, 'task:assign');
+    const canEdit = hasPermission(currentUser, 'task:edit');
 
     useEffect(() => {
         fetchTaskDetails();
         fetchDepartments();
-        if (isHead) fetchUsers();
+        if (canAssign) fetchUsers();
     }, [taskId]);
 
     const fetchDepartments = async () => {
@@ -81,17 +82,19 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 .eq('id', taskId);
 
             // Access Control Enforcement
-            const rawRole = currentUser?.user_metadata?.role;
+            const canViewGlobal = hasPermission(currentUser, 'task:view');
+            const canViewDept = hasPermission(currentUser, 'task:view_dept');
             const deptId = currentUser?.user_metadata?.department_id;
 
-            if (rawRole === 'HEAD' || rawRole === 'SUPERVISOR') {
-                // Head can only see their own creations or tasks belonging to their department
-                query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
-            } else if (rawRole === 'EMPLOYEE' || !rawRole || rawRole === 'USER') {
-                // Employee can only see tasks assigned to them
-                query = query.eq('assignee_id', currentUser.id);
+            if (!canViewGlobal) {
+                if (canViewDept && deptId) {
+                    // Head/Dept viewing: can only see their own creations or tasks belonging to their department
+                    query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+                } else {
+                    // Employee viewing: can only see tasks assigned to them OR tasks they created
+                    query = query.or(`assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`);
+                }
             }
-            // SUPER_ADMIN has full access
 
             const { data, error: fetchError } = await (query as any).single();
 
@@ -429,9 +432,9 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                         task={task}
                         getBadgeVariant={getBadgeVariant}
                         canEdit={
+                            canEdit ||
                             currentUser.id === task.creator_id ||
-                            currentUser.user_metadata?.role === 'SUPER_ADMIN' ||
-                            (isHead &&
+                            (hasPermission(currentUser, 'task:edit') &&
                                 !!task.due_date &&
                                 new Date(task.due_date) < new Date() &&
                                 !['APPROVED', 'CANCELLED'].includes(task.status) &&
@@ -483,7 +486,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     <TaskActionsSidebar
                         task={task}
                         currentUser={currentUser}
-                        isHead={isHead}
                         updating={updating}
                         onUpdateStatus={handleUpdateStatus}
                         onShowAssignModal={() => setShowAssignModal(true)}

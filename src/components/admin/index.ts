@@ -3,3 +3,4 @@ export * from './DepartmentCard';
 export * from './CreateDeptModal';
 export * from './CreateUserModal';
 export * from './RoleManagementModal';
+export * from './EditPermissionsModal';

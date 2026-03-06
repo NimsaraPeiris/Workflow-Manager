@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { hasPermission } from '../lib/permissions';
 import type { Task } from '../types';
 import { TaskHeader } from '../components/TaskHeader';
 import { TaskList } from '../components/TaskList';
@@ -42,11 +43,11 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
             fetchDepartments();
             fetchEmployees();
         }
-    }, [currentUser, newTask.department_id, filterDeptId]);
+    }, [currentUser?.id, currentUser?.permissions?.length, currentUser?.role, newTask.department_id, filterDeptId, currentView]);
 
     const fetchEmployees = async () => {
-        const userRole = currentUser?.user_metadata?.role;
-        const userDeptId = currentUser?.user_metadata?.department_id;
+        const userRole = currentUser?.role || currentUser?.user_metadata?.role;
+        const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
         let query = supabase.from('profiles').select('*, departments(name)');
         query = query.eq('role', 'EMPLOYEE');
@@ -82,46 +83,50 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
         if (!currentUser) return;
         setLoading(true);
 
-        const rawRole = currentUser.user_metadata?.role;
-        // Normalize role to handle any legacy data
-        let role = (rawRole === 'SUPERVISOR' || rawRole === 'HEAD') ? 'HEAD' : 'EMPLOYEE';
-        if (rawRole === 'SUPER_ADMIN') role = 'SUPER_ADMIN';
+        try {
+            const canViewAll = hasPermission(currentUser, 'task:view');
+            const canViewDept = hasPermission(currentUser, 'task:view_dept');
+            const deptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
-        const deptId = currentUser.user_metadata?.department_id;
+            let query = supabase.from('tasks').select(`
+                *,
+                creator:profiles!tasks_creator_id_fkey(full_name),
+                assignee:profiles!tasks_assignee_id_fkey(full_name),
+                department:departments(name)
+            `);
 
-        let query = supabase.from('tasks').select(`
-            *,
-            creator:profiles!tasks_creator_id_fkey(full_name),
-            assignee:profiles!tasks_assignee_id_fkey(full_name),
-            department:departments(name)
-        `);
-
-        if (role === 'HEAD') {
-            // Heads see all in History views, restricted in Dashboard view
-            if (currentView === 'dashboard') {
-                query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+            if (!canViewAll) {
+                if (canViewDept && deptId) {
+                    // View all in my department OR tasks I created
+                    if (currentView === 'dashboard') {
+                        query = query.or(`department_id.eq.${deptId},creator_id.eq.${currentUser.id}`);
+                    }
+                } else {
+                    // Employee/Strict view: only tasks assigned to me OR created by me
+                    if (currentView === 'dashboard') {
+                        query = query.or(`assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`);
+                    }
+                }
             }
-        } else if (role === 'EMPLOYEE') {
-            // Employees see all in History views, restricted in Dashboard view
-            if (currentView === 'dashboard') {
-                query = query.eq('assignee_id', currentUser.id);
+            // If canViewAll is true, no filters applied -> sees everything.
+
+            if (filterDeptId === 'EXTERNAL') {
+                // Tasks created by me but NOT in my department
+                query = query.eq('creator_id', currentUser.id).neq('department_id', deptId);
+            } else if (filterDeptId) {
+                query = query.eq('department_id', filterDeptId);
             }
-        }
-        // SUPER_ADMIN sees everything (no role filter applied)
 
-        if (filterDeptId === 'EXTERNAL') {
-            // Tasks created by me but NOT in my department
-            query = query.eq('creator_id', currentUser.id).neq('department_id', deptId);
-        } else if (filterDeptId) {
-            query = query.eq('department_id', filterDeptId);
-        }
+            const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
-        const { data, error: fetchError } = await query.order('created_at', { ascending: false });
-
-        if (!fetchError && data) {
-            setTasks(data);
+            if (fetchError) throw fetchError;
+            if (data) setTasks(data);
+        } catch (err: any) {
+            console.error('Error fetching dashboard tasks:', err);
+            setError('Failed to sync workload from central intelligence.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const handleCreateTask = async (e: React.FormEvent) => {
@@ -135,6 +140,23 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
             setError('You must be logged in to create a task');
             setCreateLoading(false);
             return;
+        }
+
+        // Safety check: ensure the profile exists to prevent foreign key violations (tasks_creator_id_fkey)
+        const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
+        if (!profile) {
+            console.log('Profile missing during task creation, auto-provisioning...');
+            const { error: profileError } = await supabase.from('profiles').insert([{
+                id: user.id,
+                full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
+                department_id: user.user_metadata?.department_id || null,
+                role: user.user_metadata?.role || 'EMPLOYEE',
+                permissions: user.user_metadata?.permissions || []
+            }]);
+            if (profileError) {
+                console.error('Failed to auto-provision profile:', profileError);
+                // We'll proceed anyway, database FK will catch it, but at least we tried
+            }
         }
 
         const { data: createdTasks, error: createError } = await supabase
@@ -201,7 +223,6 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 onNewTask={() => setIsModalOpen(true)}
-                userRole={(currentUser.user_metadata?.role === 'SUPERVISOR' || currentUser.user_metadata?.role === 'HEAD' || currentUser.user_metadata?.role === 'SUPER_ADMIN') ? 'HEAD' : 'EMPLOYEE'}
                 statusFilter={statusFilter}
                 setStatusFilter={setStatusFilter}
                 currentView={currentView}
@@ -224,7 +245,7 @@ export default function DashboardPage({ onTaskClick, currentUser, filterDeptId, 
                             <div className="pt-4">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                        {currentUser.user_metadata?.role === 'SUPER_ADMIN' ? 'All Organization Tasks' : 'My Department Tasks'}
+                                        {hasPermission(currentUser, 'task:view') ? 'All Organization Tasks' : 'My Department Tasks'}
                                     </h3>
                                     <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-none font-bold">
                                         {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
