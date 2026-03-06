@@ -8,6 +8,7 @@ import TaskDetailsPage from '../pages/taskDetails';
 import AuditLogsPage from '../pages/admin/AuditLogs';
 import TeamsManagementPage from '../pages/admin/TeamsManagement';
 import UserManagementPage from '../pages/admin/UserManagement';
+import CalendarView from '../pages/calendar';
 import { supabase } from '../lib/supabaseClient';
 import { Sidebar } from '../components/Sidebar';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
@@ -38,7 +39,7 @@ function AppContent() {
     const [cancelledCount, setCancelledCount] = useState(0);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar'>('dashboard');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [loadingError, setLoadingError] = useState<string | null>(null);
 
@@ -106,11 +107,13 @@ function AppContent() {
                 JSON.stringify(user.permissions) !== JSON.stringify(combinedUser.permissions);
 
             if (hasChanged) {
+                console.log("User state updated.");
                 setUser(combinedUser);
             }
         } catch (err) {
             console.error('Fatal error in loadUserData:', err);
         } finally {
+            console.log("loadUserData completed.");
             if (isMounted) setLoading(false);
         }
     };
@@ -126,14 +129,20 @@ function AppContent() {
                 setLoading(false);
                 setLoadingError("Initialization taking longer than expected. System fallback engaged.");
             }
-        }, 10000);
+        }, 15000); // Increased to 15s
 
         const init = async () => {
             try {
+                console.log("App initialization started...");
                 const { data: { session } } = await supabase.auth.getSession();
+                console.log("Session retrieved:", session?.user?.id || 'No session');
+
                 if (isMounted) {
                     await loadUserData(session?.user ?? null, isMounted);
+                    clearTimeout(timeout);
                 }
+
+                console.log("Initial loadUserData completed.");
 
                 const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
                     if (isMounted) {
@@ -372,7 +381,7 @@ function AppContent() {
                 approvedCount={approvedCount}
                 cancelledCount={cancelledCount}
                 currentView={currentView}
-                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled') => {
+                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar') => {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
                     setSelectedTaskId(null); // Exit task details when switching views
@@ -406,6 +415,8 @@ function AppContent() {
                             onBack={() => setSelectedTaskId(null)}
                             currentUser={user}
                         />
+                    ) : currentView === 'calendar' ? (
+                        <CalendarView currentUser={user} onTaskClick={(id) => setSelectedTaskId(id)} />
                     ) : (
                         <DashboardPage
                             key={currentView}

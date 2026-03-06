@@ -83,7 +83,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                     assignee:profiles!tasks_assignee_id_fkey(full_name),
                     department:departments(name),
                     team:teams(name),
-                    sub_tasks(*, assignee:profiles(full_name)),
+                    sub_tasks(*, assignee:profiles!sub_tasks_assignee_id_fkey(full_name)),
                     activities:task_activities(
                         *,
                         profile:profiles(full_name)

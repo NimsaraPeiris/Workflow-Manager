@@ -5,7 +5,8 @@ import {
     Users,
     PieChart,
     Moon,
-    Sun
+    Sun,
+    Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../lib/ThemeContext';
@@ -23,8 +24,8 @@ interface SidebarProps {
     cancelledCount?: number;
     isOpen: boolean;
     onClose: () => void;
-    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled') => void;
-    currentView: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled';
+    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar') => void;
+    currentView: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar';
     selectedTeamId: string | null;
     onTeamSelect: (id: string | null) => void;
     userTeams: any[];
@@ -339,6 +340,30 @@ export const Sidebar = ({
 
                     {/* Footer / App Badge */}
                     <div className="p-4 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 mt-auto transition-colors space-y-4">
+                        {/* Timeline Calendar Toggle */}
+                        <button
+                            onClick={() => {
+                                onViewChange('calendar');
+                                onClose();
+                            }}
+                            className={`
+                                w-full flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all group mb-2
+                                ${currentView === 'calendar'
+                                    ? 'bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold'
+                                    : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 shadow-sm hover:shadow-md'}
+                            `}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-xl shadow-sm border transition-colors ${currentView === 'calendar' ? 'bg-white dark:bg-slate-950 border-indigo-100 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>
+                                    <Calendar size={16} />
+                                </div>
+                                <span className="text-xs font-bold tracking-tight">Timeline Calendar</span>
+                            </div>
+                            {currentView === 'calendar' && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shadow-sm" />
+                            )}
+                        </button>
+
                         {/* Theme Toggle Button */}
                         <button
                             onClick={toggleTheme}
