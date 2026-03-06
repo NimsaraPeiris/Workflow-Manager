@@ -10,6 +10,7 @@ interface ManageTeamMembersModalProps {
     team: { id: string; name: string; department_id: string } | null;
     departments: Department[];
     onSaved: () => void;
+    currentUser?: any;
 }
 
 export const ManageTeamMembersModal = ({
@@ -17,7 +18,8 @@ export const ManageTeamMembersModal = ({
     onClose,
     team,
     departments,
-    onSaved
+    onSaved,
+    currentUser
 }: ManageTeamMembersModalProps) => {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -35,10 +37,19 @@ export const ManageTeamMembersModal = ({
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const { data } = await supabase
+            const isAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser as any)?.user_metadata?.role === 'SUPER_ADMIN';
+            const deptId = currentUser?.department_id;
+
+            let query = supabase
                 .from('profiles')
                 .select('id, full_name, role, department_id, team_id, departments(name)')
                 .order('full_name');
+
+            if (!isAdmin && deptId) {
+                query = query.eq('department_id', deptId);
+            }
+
+            const { data } = await query;
 
             if (data) {
                 setUsers(data);

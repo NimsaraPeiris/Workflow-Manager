@@ -10,7 +10,6 @@ interface TaskActionsSidebarProps {
     onUpdateStatus: (status: TaskStatus) => void;
     onShowAssignModal: () => void;
     onShowDecisionModal: (status: TaskStatus) => void;
-    onClaim: () => void;
     cancellationRequester?: string;
 }
 
@@ -21,15 +20,10 @@ export const TaskActionsSidebar = ({
     onUpdateStatus,
     onShowAssignModal,
     onShowDecisionModal,
-    onClaim,
     cancellationRequester
 }: TaskActionsSidebarProps) => {
-    const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.user_metadata?.role === 'SUPER_ADMIN';
+    const isAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser as any)?.user_metadata?.role === 'SUPER_ADMIN';
     const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
-    const userTeamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
-
-    const isTeamMember = task.team_id && userTeamId === task.team_id;
-    const canClaim = isTeamMember && !task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'ACCEPTED');
 
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl p-8 space-y-8 rounded-none transition-all">
@@ -78,10 +72,6 @@ export const TaskActionsSidebar = ({
                     )}
                 </PermissionGuard>
 
-                {/* Team Claim Action */}
-                {canClaim && (
-                    <Button onClick={onClaim} loading={updating} className="w-full h-12 text-sm font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/10 active:scale-95 transition-all">Claim Task</Button>
-                )}
 
                 {/* Employee Self-Actions */}
                 {currentUser.id === task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'PAUSED') && (

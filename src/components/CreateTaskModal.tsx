@@ -211,7 +211,7 @@ export const CreateTaskModal = ({
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-slate-900 dark:bg-orange-500 hover:bg-slate-800 dark:hover:bg-orange-600 disabled:bg-slate-200 dark:disabled:bg-orange-900/50 text-white font-black py-4 rounded-full transition-all shadow-xl shadow-slate-200 dark:shadow-none flex items-center justify-center gap-2 active:scale-95"
+                                    className="w-full bg-slate-900 dark:bg-orange-500 hover:bg-slate-800 dark:hover:bg-orange-600 disabled:bg-slate-200 dark:disabled:bg-orange-900/50 text-white font-black py-4 rounded-none transition-all shadow-xl shadow-slate-200 dark:shadow-none flex items-center justify-center gap-2 active:scale-95"
                                 >
                                     {loading ? (
                                         <Loader2 className="animate-spin" size={20} />

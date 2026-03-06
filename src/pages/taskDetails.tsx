@@ -465,17 +465,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         setUpdating(false);
     };
 
-    const handleClaim = async () => {
-        if (!task || !currentUser) return;
-        setConfirmConfig({
-            title: 'Claim Task',
-            description: `Are you sure you want to take ownership of this task? You will be set as the primary assignee.`,
-            confirmText: 'Claim Now',
-            variant: 'primary'
-        });
-        setPendingAssignment({ userId: currentUser.id, teamId: task.team_id, newDeptId: undefined });
-        setShowConfirmModal(true);
-    };
 
     const handleDateUpdate = async (newDate: string) => {
         if (!task) return;
@@ -704,7 +693,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             setPendingStatus(status);
                             setShowDecisionModal(true);
                         }}
-                        onClaim={handleClaim}
                         cancellationRequester={(task as any).activities?.find((a: any) => a.new_value === 'CANCEL_REQUESTED')?.profile?.full_name}
                     />
                 </div>

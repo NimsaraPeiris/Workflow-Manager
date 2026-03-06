@@ -58,7 +58,7 @@ export const Sidebar = ({
     const navItems = [
         {
             id: 'overview',
-            label: 'Organization Overview',
+            label: 'Task Overview',
             icon: PieChart,
             active: isOverview,
             onClick: () => {

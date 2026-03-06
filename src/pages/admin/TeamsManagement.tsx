@@ -27,18 +27,39 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
     const fetchData = async () => {
         setLoading(true);
         try {
-            const { data: teamData } = await supabase
+            const isAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser as any)?.user_metadata?.role === 'SUPER_ADMIN';
+            const deptId = currentUser?.department_id;
+
+            let teamQuery = supabase
                 .from('teams')
                 .select('*, departments(name), profiles(id, full_name, role)')
                 .order('name');
 
-            const { data: deptData } = await supabase
+            if (!isAdmin && deptId) {
+                teamQuery = teamQuery.eq('department_id', deptId);
+            }
+
+            const { data: teamData } = await teamQuery;
+
+            let deptQuery = supabase
                 .from('departments')
                 .select('*')
                 .order('name');
 
+            if (!isAdmin && deptId) {
+                deptQuery = deptQuery.eq('id', deptId);
+            }
+
+            const { data: deptData } = await deptQuery;
+
             if (teamData) setTeams(teamData);
-            if (deptData) setDepartments(deptData);
+            if (deptData) {
+                setDepartments(deptData);
+                // Pre-select department for non-admins if only one is available
+                if (!isAdmin && deptData.length === 1) {
+                    setNewTeam(prev => ({ ...prev, departmentId: deptData[0].id }));
+                }
+            }
         } catch (err) {
             console.error('Error fetching teams:', err);
         } finally {
@@ -51,9 +72,15 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
         setTeamLoading(true);
         setError('');
         try {
+            const isAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser as any)?.user_metadata?.role === 'SUPER_ADMIN';
+            const deptId = currentUser?.department_id;
+
             const { data, error: teamErr } = await supabase
                 .from('teams')
-                .insert([{ name: newTeam.name, department_id: newTeam.departmentId }])
+                .insert([{
+                    name: newTeam.name,
+                    department_id: isAdmin ? newTeam.departmentId : (deptId || newTeam.departmentId)
+                }])
                 .select()
                 .single();
 
@@ -221,6 +248,7 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
                 team={selectedTeamForMembers}
                 departments={departments}
                 onSaved={fetchData}
+                currentUser={currentUser}
             />
         </div>
     );

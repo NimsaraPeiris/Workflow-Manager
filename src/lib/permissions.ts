@@ -73,6 +73,7 @@ export const hasPermission = (user: any, permission: PermissionKey): boolean => 
         if (permission === 'task:view_dept') return true;
         if (permission === 'user:view') return true;
         if (permission === 'team:view_dept') return true;
+        if (permission === 'team:manage') return true;
     }
 
     const permissions = user.permissions || user.user_metadata?.permissions || [];
