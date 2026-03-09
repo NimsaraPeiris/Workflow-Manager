@@ -15,7 +15,8 @@ describe('TaskActionsSidebar', () => {
         description: '',
         assignee_id: '',
         due_date: '',
-        updated_at: ''
+        updated_at: '',
+        total_time_spent: 0
     };
 
     const mockUser = {

@@ -19,7 +19,8 @@ describe('CreateTaskModal', () => {
         priority: 'LOW',
         due_date: '',
         department_id: '',
-        assignee_id: ''
+        assignee_id: '',
+        team_id: ''
     };
 
     const mockProps = {
@@ -32,6 +33,7 @@ describe('CreateTaskModal', () => {
         setNewTask: vi.fn(),
         departments: [{ id: 'dept-1', name: 'Design' }],
         employees: [{ id: 'emp-1', full_name: 'John Doe', departments: { name: 'Design' } }],
+        teams: [],
         currentUser: { id: 'user-1', user_metadata: { role: 'HEAD', department_id: 'dept-1' } }
     };
 

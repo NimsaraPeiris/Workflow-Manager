@@ -13,12 +13,16 @@ const mockProps = {
     onClose: vi.fn(),
     onViewChange: vi.fn(),
     currentView: 'dashboard' as const,
+    selectedTeamId: null,
+    onTeamSelect: vi.fn(),
+    userTeams: [],
+    user: { id: '1', role: 'SUPER_ADMIN', permissions: [] }
 };
 
 describe('Sidebar', () => {
     it('renders overview button', () => {
         render(<Sidebar {...mockProps} />);
-        expect(screen.getByText(/Organization Overview/i)).toBeInTheDocument();
+        expect(screen.getByText(/Task Overview/i)).toBeInTheDocument();
     });
 
     it('shows Security Logs buttons', () => {

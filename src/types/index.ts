@@ -14,6 +14,7 @@ export interface User {
     team_id?: string;
     permissions?: string[];
     team?: { name: string };
+    user_metadata?: any;
 }
 
 

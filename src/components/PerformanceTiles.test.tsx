@@ -12,10 +12,10 @@ vi.mock('framer-motion', () => ({
 
 describe('PerformanceTiles', () => {
     const mockTasks: Task[] = [
-        { id: '1', title: 'Task 1', status: 'APPROVED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
-        { id: '2', title: 'Task 2', status: 'IN_PROGRESS', priority: 'MEDIUM', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
-        { id: '3', title: 'Task 3', status: 'SUBMITTED', priority: 'LOW', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '' },
-        { id: '4', title: 'Task 4', status: 'REJECTED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '2020-01-01', updated_at: '' },
+        { id: '1', title: 'Task 1', status: 'APPROVED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '', total_time_spent: 0 },
+        { id: '2', title: 'Task 2', status: 'IN_PROGRESS', priority: 'MEDIUM', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '', total_time_spent: 0 },
+        { id: '3', title: 'Task 3', status: 'SUBMITTED', priority: 'LOW', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '', updated_at: '', total_time_spent: 0 },
+        { id: '4', title: 'Task 4', status: 'REJECTED', priority: 'HIGH', created_at: '', creator_id: '', department_id: '', description: '', assignee_id: '', due_date: '2020-01-01', updated_at: '', total_time_spent: 0 },
     ];
 
     it('renders all 6 performance metric labels', () => {

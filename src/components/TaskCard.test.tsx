@@ -25,6 +25,7 @@ describe('TaskCard', () => {
         department_id: 'dept-1',
         assignee_id: 'user-2',
         updated_at: '',
+        total_time_spent: 0,
         creator: { full_name: 'John Creator' },
         assignee: { full_name: 'Jane Assignee' },
         department: { name: 'Engineering' }

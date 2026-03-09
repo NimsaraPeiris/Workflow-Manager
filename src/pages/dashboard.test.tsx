@@ -37,6 +37,7 @@ describe('DashboardPage UI & Logic', () => {
         onTaskClick: vi.fn(),
         currentUser: mockUserHead,
         filterDeptId: null,
+        filterTeamId: null,
         onDeptSelect: vi.fn(),
         onRefreshStats: vi.fn(),
         currentView: 'dashboard' as const
