@@ -12,10 +12,15 @@ vi.mock('../lib/supabaseClient', () => {
             select: vi.fn(() => chain),
             eq: vi.fn(() => chain),
             or: vi.fn(() => chain),
+            in: vi.fn(() => chain),
+            limit: vi.fn(() => chain),
+            maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+            neq: vi.fn(() => chain),
             order: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? data : [], error: null })),
             single: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? null : data, error: null })),
             update: vi.fn(() => chain),
             insert: vi.fn(() => Promise.resolve({ error: null })),
+            delete: vi.fn(() => chain),
         };
         return chain;
     };
@@ -26,10 +31,15 @@ vi.mock('../lib/supabaseClient', () => {
                 if (!chains[table]) {
                     if (table === 'profiles') chains[table] = createChain([{ id: 'worker-1', role: 'EMPLOYEE', full_name: 'Jane Worker' }]);
                     else if (table === 'departments') chains[table] = createChain([{ id: 'dept-1', name: 'Engineering' }]);
+                    else if (table === 'teams') chains[table] = createChain([]);
                     else chains[table] = createChain({});
                 }
                 return chains[table];
             }),
+            auth: {
+                getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+                onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
+            },
             storage: {
                 from: vi.fn(() => ({
                     upload: vi.fn().mockResolvedValue({ error: null }),
@@ -51,7 +61,9 @@ vi.mock('../lib/auditLogger', () => ({
 vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, onClick }: any) => <div className={className} onClick={onClick}>{children}</div>,
-        p: ({ children, className }: any) => <p className={className}>{children}</p>
+        span: ({ children, className }: any) => <span className={className}>{children}</span>,
+        p: ({ children, className }: any) => <p className={className}>{children}</p>,
+        button: ({ children, className, onClick, ...rest }: any) => <button className={className} onClick={onClick}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>
 }));
@@ -61,7 +73,10 @@ describe('Task LifeCycle Integration (Requester Flow)', () => {
     const mockOnBack = vi.fn();
     const mockRequester = {
         id: 'creator-1',
-        user_metadata: { role: 'HEAD', department_id: 'dept-1' }
+        role: 'HEAD',
+        department_id: 'dept-1',
+        user_metadata: { role: 'HEAD', department_id: 'dept-1' },
+        permissions: ['task:view_dept', 'task:approve', 'task:assign', 'task:create']
     };
 
     const submittedTask = {
@@ -79,7 +94,9 @@ describe('Task LifeCycle Integration (Requester Flow)', () => {
         total_time_spent: 0,
         creator: { full_name: 'John Creator' },
         assignee: { full_name: 'Jane Worker' },
-        department: { name: 'Engineering' }
+        department: { name: 'Engineering' },
+        sub_tasks: [],
+        activities: []
     };
 
     beforeEach(() => {
@@ -87,6 +104,14 @@ describe('Task LifeCycle Integration (Requester Flow)', () => {
     });
 
     it('integration: requester can reject a submitted task with a mandatory comment', async () => {
+        // Mock auth to return the requester for PermissionGuard
+        vi.mocked(supabase.auth.getSession).mockResolvedValue({
+            data: { session: { user: mockRequester } }
+        } as any);
+
+        const profilesChain = (supabase.from('profiles') as any);
+        profilesChain.maybeSingle.mockResolvedValue({ data: { ...mockRequester, id: 'creator-1' }, error: null });
+
         const taskChain = (supabase.from('tasks') as any);
         taskChain.single.mockResolvedValue({ data: submittedTask, error: null });
 

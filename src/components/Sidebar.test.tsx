@@ -2,6 +2,29 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Sidebar } from './Sidebar';
 import { describe, it, expect, vi } from 'vitest';
 
+// Mock usePermissions
+vi.mock('../hooks/usePermissions', () => ({
+    usePermissions: () => ({
+        user: { id: '1', role: 'SUPER_ADMIN', permissions: [] },
+        loading: false,
+        check: () => true,
+        hasPermission: () => true,
+    })
+}));
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+    motion: {
+        div: ({ children, className, onClick, ...rest }: any) => <div className={className} onClick={onClick}>{children}</div>,
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>
+}));
+
+// Mock ThemeContext
+vi.mock('../lib/ThemeContext', () => ({
+    useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() })
+}));
+
 // Basic props for testing
 const mockProps = {
     departments: [],

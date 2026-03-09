@@ -69,7 +69,7 @@ describe('TaskCard', () => {
             status: 'IN_PROGRESS' as const
         };
         render(<TaskCard task={overdueTask} onClick={vi.fn()} />);
-        expect(screen.getByText(/OVERDUE/i)).toBeInTheDocument();
+        expect(screen.getByText(/DEADLINE EXPIRED/i)).toBeInTheDocument();
     });
 
     it('renders initials correctly', () => {

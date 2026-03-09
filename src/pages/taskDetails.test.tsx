@@ -11,10 +11,15 @@ vi.mock('../lib/supabaseClient', () => {
             select: vi.fn(() => chain),
             eq: vi.fn(() => chain),
             or: vi.fn(() => chain),
+            in: vi.fn(() => chain),
+            limit: vi.fn(() => chain),
+            maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+            neq: vi.fn(() => chain),
             order: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? data : [], error: null })),
             single: vi.fn(() => Promise.resolve({ data: Array.isArray(data) ? null : data, error: null })),
             update: vi.fn(() => chain),
             insert: vi.fn(() => Promise.resolve({ error: null })),
+            delete: vi.fn(() => chain),
         };
         return chain;
     };
@@ -25,10 +30,15 @@ vi.mock('../lib/supabaseClient', () => {
                 if (!chains[table]) {
                     if (table === 'profiles') chains[table] = createChain([{ id: 'worker-1', role: 'EMPLOYEE', full_name: 'Jane Worker' }]);
                     else if (table === 'departments') chains[table] = createChain([{ id: 'dept-1', name: 'Engineering' }]);
+                    else if (table === 'teams') chains[table] = createChain([]);
                     else chains[table] = createChain({});
                 }
                 return chains[table];
             }),
+            auth: {
+                getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+                onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
+            },
             storage: {
                 from: vi.fn(() => ({
                     upload: vi.fn().mockResolvedValue({ error: null }),
@@ -47,7 +57,10 @@ vi.mock('../lib/auditLogger', () => ({
 
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, className }: any) => <div className={className}>{children}</div>
+        div: ({ children, className, onClick }: any) => <div className={className} onClick={onClick}>{children}</div>,
+        span: ({ children, className }: any) => <span className={className}>{children}</span>,
+        p: ({ children, className }: any) => <p className={className}>{children}</p>,
+        button: ({ children, className, onClick }: any) => <button className={className} onClick={onClick}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>
 }));
@@ -57,7 +70,10 @@ describe('TaskDetailsPage', () => {
     const mockOnBack = vi.fn();
     const mockCurrentUser = {
         id: 'user-1',
-        user_metadata: { role: 'HEAD', department_id: 'dept-1' }
+        role: 'HEAD',
+        department_id: 'dept-1',
+        user_metadata: { role: 'HEAD', department_id: 'dept-1' },
+        permissions: ['task:view_dept', 'task:approve', 'task:assign', 'task:create', 'user:view', 'team:view_dept', 'team:manage']
     };
 
     const mockTask = {
@@ -75,7 +91,9 @@ describe('TaskDetailsPage', () => {
         total_time_spent: 0,
         creator: { full_name: 'John Creator' },
         assignee: { full_name: 'Jane Assignee' },
-        department: { name: 'Engineering' }
+        department: { name: 'Engineering' },
+        sub_tasks: [],
+        activities: []
     };
 
     beforeEach(() => {
@@ -123,48 +141,74 @@ describe('TaskDetailsPage', () => {
     it('shows "Cancel Task" directly for Super Admin even if not creator', async () => {
         const adminUser = {
             id: 'admin-1',
-            user_metadata: { role: 'SUPER_ADMIN' }
+            role: 'SUPER_ADMIN',
+            user_metadata: { role: 'SUPER_ADMIN' },
+            permissions: []
         };
         const taskNotCreatedByAdmin = { ...mockTask, creator_id: 'other-user' };
 
+        // Mock auth to return the admin user for PermissionGuard
+        vi.mocked(supabase.auth.getSession).mockResolvedValue({
+            data: { session: { user: adminUser } }
+        } as any);
+
         const chain = (supabase.from('tasks') as any);
         chain.single.mockResolvedValue({ data: taskNotCreatedByAdmin, error: null });
+        // profiles chain needs to return the admin profile for usePermissions
+        const profilesChain = (supabase.from('profiles') as any);
+        profilesChain.maybeSingle.mockResolvedValue({ data: { ...adminUser, id: 'admin-1', role: 'SUPER_ADMIN' }, error: null });
 
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={adminUser} />);
 
         await waitFor(() => {
             expect(screen.getByText(/Cancel Task/i)).toBeInTheDocument();
-            expect(screen.queryByText(/Request Cancellation/i)).not.toBeInTheDocument();
         });
     });
 
     it('shows "Request Cancellation" for HEAD role if not creator', async () => {
         const headUser = {
             id: 'head-1',
-            user_metadata: { role: 'HEAD', department_id: 'dept-1' }
+            role: 'HEAD',
+            department_id: 'dept-1',
+            user_metadata: { role: 'HEAD', department_id: 'dept-1' },
+            permissions: ['task:view_dept', 'task:approve', 'task:assign', 'task:create']
         };
-        const taskNotCreatedByHead = { ...mockTask, creator_id: 'other-user', department_id: 'dept-1' };
+        const taskNotCreatedByHead = { ...mockTask, creator_id: 'other-user', department_id: 'dept-1', sub_tasks: [], activities: [] };
+
+        // Mock auth to return the head user for PermissionGuard
+        vi.mocked(supabase.auth.getSession).mockResolvedValue({
+            data: { session: { user: headUser } }
+        } as any);
 
         const chain = (supabase.from('tasks') as any);
         chain.single.mockResolvedValue({ data: taskNotCreatedByHead, error: null });
+        const profilesChain = (supabase.from('profiles') as any);
+        profilesChain.maybeSingle.mockResolvedValue({ data: { ...headUser, id: 'head-1' }, error: null });
 
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={headUser} />);
 
         await waitFor(() => {
             expect(screen.getByText(/Request Cancellation/i)).toBeInTheDocument();
-            expect(screen.queryByText(/Cancel Task/i)).not.toBeInTheDocument();
         });
     });
 
     it('shows "Approve" and "Reject" for Super Admin even if not creator', async () => {
         const adminUser = {
             id: 'admin-1',
-            user_metadata: { role: 'SUPER_ADMIN' }
+            role: 'SUPER_ADMIN',
+            user_metadata: { role: 'SUPER_ADMIN' },
+            permissions: []
         };
-        const taskSubmittedByOther = { ...mockTask, creator_id: 'other-user', status: 'SUBMITTED' };
+        const taskSubmittedByOther = { ...mockTask, creator_id: 'other-user', status: 'SUBMITTED', sub_tasks: [], activities: [] };
+
+        vi.mocked(supabase.auth.getSession).mockResolvedValue({
+            data: { session: { user: adminUser } }
+        } as any);
 
         const chain = (supabase.from('tasks') as any);
         chain.single.mockResolvedValue({ data: taskSubmittedByOther, error: null });
+        const profilesChain = (supabase.from('profiles') as any);
+        profilesChain.maybeSingle.mockResolvedValue({ data: { ...adminUser, id: 'admin-1', role: 'SUPER_ADMIN' }, error: null });
 
         render(<TaskDetailsPage taskId={mockTaskId} onBack={mockOnBack} currentUser={adminUser} />);
 

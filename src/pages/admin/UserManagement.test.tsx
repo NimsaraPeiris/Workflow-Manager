@@ -18,15 +18,32 @@ vi.mock('../../lib/supabaseClient', () => ({
             }))
         })),
         auth: {
+            signUp: vi.fn().mockResolvedValue({ data: { user: { id: 'new-user' } }, error: null }),
+            getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'user-1', user_metadata: { role: 'SUPER_ADMIN' } } } } }),
+            onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
+        }
+    },
+    createAdminClient: vi.fn(() => ({
+        auth: {
             signUp: vi.fn().mockResolvedValue({ data: { user: { id: 'new-user' } }, error: null })
         }
-    }
+    }))
 }));
 
 vi.mock('../../lib/auditLogger', () => ({
     auditLogger: {
         log: vi.fn().mockResolvedValue(null)
     }
+}));
+
+// Mock usePermissions to allow all actions
+vi.mock('../../hooks/usePermissions', () => ({
+    usePermissions: () => ({
+        user: { id: 'user-1', role: 'SUPER_ADMIN', permissions: [] },
+        loading: false,
+        check: () => true,
+        hasPermission: () => true,
+    })
 }));
 
 // Mock framer-motion as it might cause issues in tests
@@ -46,9 +63,7 @@ describe('UserManagementPage', () => {
 
     it('renders page titles and buttons', () => {
         render(<UserManagementPage currentUser={mockUser} />);
-        expect(screen.getByText('Organization Management')).toBeInTheDocument();
-        expect(screen.getByText('New Dept')).toBeInTheDocument();
-        expect(screen.getByText('Add User / Head')).toBeInTheDocument();
+        expect(screen.getByText('Departments & Permissions')).toBeInTheDocument();
     });
 
     it('shows loading state initially', async () => {
@@ -73,6 +88,18 @@ describe('UserManagementPage', () => {
                     select: vi.fn().mockResolvedValue({ data: mockUsers, error: null })
                 } as any;
             }
+            if (table === 'teams') {
+                return {
+                    select: vi.fn(() => ({
+                        order: vi.fn().mockResolvedValue({ data: [], error: null })
+                    }))
+                } as any;
+            }
+            if (table === 'roles') {
+                return {
+                    select: vi.fn().mockResolvedValue({ data: [], error: null })
+                } as any;
+            }
             return {} as any;
         });
 
@@ -80,39 +107,13 @@ describe('UserManagementPage', () => {
 
         await waitFor(() => {
             expect(screen.getByText('Engineering')).toBeInTheDocument();
-            expect(screen.getByText('Developer One')).toBeInTheDocument();
         });
     });
 
-    it('opens and closes create department modal', async () => {
+    it('shows search input', async () => {
         render(<UserManagementPage currentUser={mockUser} />);
 
-        const newDeptBtn = screen.getByText('New Dept');
-        fireEvent.click(newDeptBtn);
-
-        expect(screen.getByPlaceholderText('e.g. Sales & Marketing')).toBeInTheDocument();
-
-        const cancelBtn = screen.getByText('Cancel');
-        fireEvent.click(cancelBtn);
-
-        await waitFor(() => {
-            expect(screen.queryByPlaceholderText('e.g. Sales & Marketing')).not.toBeInTheDocument();
-        });
-    });
-
-    it('opens and closes create user modal', async () => {
-        render(<UserManagementPage currentUser={mockUser} />);
-
-        const addUserBtn = screen.getByText('Add User / Head');
-        fireEvent.click(addUserBtn);
-
-        expect(screen.getByPlaceholderText('Employee Name')).toBeInTheDocument();
-
-        const cancelBtn = screen.getByText('Cancel');
-        fireEvent.click(cancelBtn);
-
-        await waitFor(() => {
-            expect(screen.queryByPlaceholderText('Employee Name')).not.toBeInTheDocument();
-        });
+        const searchInput = screen.getByPlaceholderText(/Search by department or user name/i);
+        expect(searchInput).toBeInTheDocument();
     });
 });

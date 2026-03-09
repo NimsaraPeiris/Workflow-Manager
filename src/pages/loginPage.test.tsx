@@ -7,11 +7,26 @@ import { supabase } from '../lib/supabaseClient';
 vi.mock('../lib/supabaseClient', () => ({
     supabase: {
         auth: {
-            signInWithPassword: vi.fn()
+            signInWithPassword: vi.fn(),
+            getUser: vi.fn().mockResolvedValue({ data: { user: null } })
         },
         from: vi.fn(() => ({
             insert: vi.fn().mockResolvedValue({ error: null })
         }))
+    }
+}));
+
+// Mock authBridge
+vi.mock('../lib/authBridge', () => ({
+    authBridge: {
+        signInWithExternalToken: vi.fn()
+    }
+}));
+
+// Mock auditLogger
+vi.mock('../lib/auditLogger', () => ({
+    auditLogger: {
+        log: vi.fn()
     }
 }));
 

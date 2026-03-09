@@ -2,6 +2,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TaskHeader } from './TaskHeader';
 import { describe, it, expect, vi } from 'vitest';
 
+// Mock usePermissions to allow task:create
+vi.mock('../hooks/usePermissions', () => ({
+    usePermissions: () => ({
+        user: { id: 'user-1', role: 'HEAD', permissions: ['task:create'] },
+        loading: false,
+        check: () => true,
+        hasPermission: () => true,
+    })
+}));
+
 describe('TaskHeader', () => {
     const mockProps = {
         searchQuery: '',
@@ -15,9 +25,9 @@ describe('TaskHeader', () => {
         expect(screen.getByText('Workflow Management')).toBeInTheDocument();
     });
 
-    it('shows New Task button', () => {
+    it('shows Create Task button', () => {
         render(<TaskHeader {...mockProps} />);
-        // CreateTaskButton has its own PermissionGuard, might not show up in simple render
+        expect(screen.getByText(/Create Task/i)).toBeInTheDocument();
     });
 
     it('calls setSearchQuery on input change', () => {
@@ -29,7 +39,7 @@ describe('TaskHeader', () => {
 
     it('calls onNewTask when button is clicked', () => {
         render(<TaskHeader {...mockProps} />);
-        fireEvent.click(screen.getByText('New Task'));
+        fireEvent.click(screen.getByText(/Create Task/i));
         expect(mockProps.onNewTask).toHaveBeenCalled();
     });
 });

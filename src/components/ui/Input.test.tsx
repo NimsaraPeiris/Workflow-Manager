@@ -19,7 +19,7 @@ describe('Input', () => {
     it('shows error message when error prop is provided', () => {
         render(<Input label="Email" error="Invalid email address" />);
         expect(screen.getByText(/Invalid email address/i)).toBeInTheDocument();
-        expect(screen.getByRole('textbox')).toHaveClass('border-rose-300');
+        expect(screen.getByRole('textbox')).toHaveClass('border-rose-400');
     });
 
     it('handles change events', () => {
