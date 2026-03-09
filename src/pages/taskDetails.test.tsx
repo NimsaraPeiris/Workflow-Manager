@@ -73,7 +73,6 @@ describe('TaskDetailsPage', () => {
         created_at: '2025-01-01T00:00:00Z',
         updated_at: '2025-01-01T00:00:00Z',
         total_time_spent: 0,
-        activities: [],
         creator: { full_name: 'John Creator' },
         assignee: { full_name: 'Jane Assignee' },
         department: { name: 'Engineering' }
