@@ -15,7 +15,7 @@ vi.mock('../hooks/usePermissions', () => ({
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, className, onClick, ...rest }: any) => <div className={className} onClick={onClick}>{children}</div>,
+        div: ({ children, className, onClick }: any) => <div className={className} onClick={onClick}>{children}</div>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>
 }));

@@ -63,7 +63,7 @@ vi.mock('framer-motion', () => ({
         div: ({ children, className, onClick }: any) => <div className={className} onClick={onClick}>{children}</div>,
         span: ({ children, className }: any) => <span className={className}>{children}</span>,
         p: ({ children, className }: any) => <p className={className}>{children}</p>,
-        button: ({ children, className, onClick, ...rest }: any) => <button className={className} onClick={onClick}>{children}</button>,
+        button: ({ children, className, onClick }: any) => <button className={className} onClick={onClick}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>
 }));
