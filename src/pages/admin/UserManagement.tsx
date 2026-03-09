@@ -22,9 +22,10 @@ import type { User, Department } from '../../types';
 
 interface UserManagementProps {
     currentUser: User | null;
+    onUserUpdate?: () => Promise<void>;
 }
 
-export default function UserManagementPage({ currentUser }: UserManagementProps) {
+export default function UserManagementPage({ currentUser, onUserUpdate }: UserManagementProps) {
     const [departments, setDepartments] = useState<Department[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -308,6 +309,8 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
             });
 
             fetchData();
+            // Refresh the current user's header info in case their own role was updated
+            if (onUserUpdate) await onUserUpdate();
             alert('Security keys updated successfully.');
         } catch (err: any) {
             console.error('Update failed:', err);
@@ -621,7 +624,10 @@ export default function UserManagementPage({ currentUser }: UserManagementProps)
                                 .eq('id', roleData.id);
                             if (error) throw error;
                         } else {
-                            const { error } = await supabase.from('roles').insert([roleData]);
+                            const { error } = await supabase.from('roles').insert([{
+                                name: roleData.name,
+                                permissions: roleData.permissions
+                            }]);
                             if (error) throw error;
                         }
                         await fetchRoles();

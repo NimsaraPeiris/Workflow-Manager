@@ -12,7 +12,7 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     return (
-        <nav className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-6 py-3 flex justify-between items-center sticky top-0 z-50 transition-colors">
+        <nav className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-4 sm:px-6 py-3 flex justify-between items-center sticky top-0 z-50 transition-colors">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onToggleSidebar}
@@ -35,7 +35,7 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                 >
                     <div className="text-right hidden sm:block">
                         <p className="text-[10px] text-gray-500 dark:text-slate-400 uppercase tracking-widest font-black mt-0.5">
-                            {user.user_metadata?.role || 'User'} • {user.user_metadata?.full_name || 'General'}
+                            {(user.role && user.role !== 'authenticated' ? user.role : user.user_metadata?.role) || 'User'} • {user.full_name || user.user_metadata?.full_name || 'General'}
                         </p>
                         <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
                             {user.user_metadata?.email}
@@ -62,10 +62,10 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
                                     </div>
                                     <div className="overflow-hidden">
                                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                            {user.user_metadata?.full_name || 'System User'}
+                                            {user.full_name || user.user_metadata?.full_name || 'System User'}
                                         </p>
                                         <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">
-                                            {user.user_metadata?.role || 'User'}
+                                            {(user.role && user.role !== 'authenticated' ? user.role : user.user_metadata?.role) || 'User'}
                                         </p>
                                     </div>
                                 </div>

@@ -39,7 +39,7 @@ function AppContent() {
     const [cancelledCount, setCancelledCount] = useState(0);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar' | 'assigned'>('dashboard');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [loadingError, setLoadingError] = useState<string | null>(null);
 
@@ -196,10 +196,9 @@ function AppContent() {
         if (user && !loading) {
             fetchStats();
             fetchTeams(user);
-            // Redirect based on permissions if needed
-            if (!hasPermission(user, 'task:view') && !selectedDeptId && currentView === 'dashboard') {
-                const deptId = user.department_id || user.user_metadata?.department_id;
-                if (deptId) setSelectedDeptId(deptId);
+            // Default non-admin users to 'Assigned Tasks' view
+            if (!hasPermission(user, 'task:view') && currentView === 'dashboard' && !selectedDeptId && !selectedTeamId) {
+                setCurrentView('assigned');
             }
         }
     }, [user?.id, user?.permissions?.length, user?.role, user?.department_id, user?.team_id, loading]);
@@ -312,6 +311,14 @@ function AppContent() {
         setCurrentView('dashboard');
     };
 
+    // Refetch the current user profile from database (used when roles/permissions update)
+    const refreshCurrentUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+            await loadUserData(session.user, true);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors p-6">
@@ -381,7 +388,7 @@ function AppContent() {
                 approvedCount={approvedCount}
                 cancelledCount={cancelledCount}
                 currentView={currentView}
-                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar') => {
+                onViewChange={(view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar' | 'assigned') => {
                     setCurrentView(view);
                     setIsSidebarOpen(false);
                     setSelectedTaskId(null); // Exit task details when switching views
@@ -402,10 +409,10 @@ function AppContent() {
                 user={user}
             />
 
-            <main className="lg:ml-72 pt-20 min-h-screen overflow-x-hidden">
-                <div className="max-w-7xl mx-auto py-8 px-4 sm:px-8 lg:px-12">
+            <main className="lg:ml-72 pt-16 lg:pt-20 min-h-screen overflow-x-hidden transition-all">
+                <div className="max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-8 lg:px-12">
                     {currentView === 'users' ? (
-                        <UserManagementPage currentUser={user} />
+                        <UserManagementPage currentUser={user} onUserUpdate={refreshCurrentUser} />
                     ) : currentView === 'teams' ? (
                         <TeamsManagementPage currentUser={user} />
                     ) : currentView === 'audit' ? (

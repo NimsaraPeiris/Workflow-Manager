@@ -27,8 +27,11 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
     const fetchData = async () => {
         setLoading(true);
         try {
-            const isAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser as any)?.user_metadata?.role === 'SUPER_ADMIN';
-            const deptId = currentUser?.department_id;
+            const appRole = (currentUser?.role && currentUser?.role !== 'authenticated')
+                ? currentUser.role
+                : currentUser?.user_metadata?.role;
+            const isAdmin = appRole === 'SUPER_ADMIN';
+            const deptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
             let teamQuery = supabase
                 .from('teams')
@@ -46,6 +49,7 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
                 .select('*')
                 .order('name');
 
+            // If not admin, you can only see/pick your own department
             if (!isAdmin && deptId) {
                 deptQuery = deptQuery.eq('id', deptId);
             }
@@ -55,8 +59,10 @@ export default function TeamsManagementPage({ currentUser }: TeamsManagementProp
             if (teamData) setTeams(teamData);
             if (deptData) {
                 setDepartments(deptData);
-                // Pre-select department for non-admins if only one is available
-                if (!isAdmin && deptData.length === 1) {
+                // For non-admins, force the new team's department to their own
+                if (!isAdmin && deptId) {
+                    setNewTeam(prev => ({ ...prev, departmentId: deptId }));
+                } else if (deptData.length === 1) {
                     setNewTeam(prev => ({ ...prev, departmentId: deptData[0].id }));
                 }
             }

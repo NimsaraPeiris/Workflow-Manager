@@ -73,16 +73,27 @@ export const TaskActionsSidebar = ({
                 </PermissionGuard>
 
 
-                {/* Employee Self-Actions */}
-                {currentUser.id === task.assignee_id && (task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'PAUSED') && (
-                    <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">{task.status === 'PAUSED' ? 'Resume Working' : 'Start Working'}</Button>
-                )}
-                {currentUser.id === task.assignee_id && task.status === 'IN_PROGRESS' && (
-                    <div className="flex flex-col gap-3">
-                        <Button onClick={() => onUpdateStatus('SUBMITTED')} loading={updating} className="w-full h-12 text-sm font-bold active:scale-95">Submit</Button>
-                        <Button onClick={() => onUpdateStatus('PAUSED')} variant="outline" loading={updating} className="w-full h-12 text-sm font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/40 dark:text-orange-400 active:scale-95 transition-all">Do Later</Button>
-                    </div>
-                )}
+                {/* Employee Self-Actions: assignee OR team members */}
+                {(() => {
+                    const userTeamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
+                    const isAssignee = currentUser.id === task.assignee_id;
+                    const isTeamMember = !!(task.team_id && userTeamId && task.team_id === userTeamId);
+                    const canWork = isAssignee || isTeamMember;
+
+                    return canWork && (
+                        <>
+                            {(task.status === 'ASSIGNED' || task.status === 'REJECTED' || task.status === 'PAUSED') && (
+                                <Button onClick={() => onUpdateStatus('IN_PROGRESS')} loading={updating} className="w-full h-12 text-sm font-bold shadow-lg shadow-orange-500/10 active:scale-95">{task.status === 'PAUSED' ? 'Resume Working' : 'Start Working'}</Button>
+                            )}
+                            {task.status === 'IN_PROGRESS' && (
+                                <div className="flex flex-col gap-3">
+                                    <Button onClick={() => onUpdateStatus('SUBMITTED')} loading={updating} className="w-full h-12 text-sm font-bold active:scale-95">Submit</Button>
+                                    <Button onClick={() => onUpdateStatus('PAUSED')} variant="outline" loading={updating} className="w-full h-12 text-sm font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/40 dark:text-orange-400 active:scale-95 transition-all">Do Later</Button>
+                                </div>
+                            )}
+                        </>
+                    );
+                })()}
 
                 {/* Approve / Reject */}
                 {task.status === 'SUBMITTED' && (

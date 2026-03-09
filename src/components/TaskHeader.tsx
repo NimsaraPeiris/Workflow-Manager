@@ -45,7 +45,7 @@ export const TaskHeader = ({
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
             <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">{title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">{title}</h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">{subtitle}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">

@@ -71,6 +71,9 @@ export const hasPermission = (user: any, permission: PermissionKey): boolean => 
     // Head of Department auto-permissions
     if (appRole === 'DEP_HEAD' || appRole === 'HEAD') {
         if (permission === 'task:view_dept') return true;
+        if (permission === 'task:approve') return true;
+        if (permission === 'task:assign') return true;
+        if (permission === 'task:create') return true;
         if (permission === 'user:view') return true;
         if (permission === 'team:view_dept') return true;
         if (permission === 'team:manage') return true;

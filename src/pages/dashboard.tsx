@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { hasPermission } from '../lib/permissions';
 import type { Task } from '../types';
@@ -15,7 +15,7 @@ interface DashboardPageProps {
     filterTeamId: string | null;
     onDeptSelect: (deptId: string | null) => void;
     onRefreshStats: () => void;
-    currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled';
+    currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled' | 'assigned';
 }
 
 export default function DashboardPage({
@@ -47,15 +47,22 @@ export default function DashboardPage({
     const [departments, setDepartments] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
     const [teams, setTeams] = useState<any[]>([]);
+    const fetchIdRef = useRef(0);
 
     useEffect(() => {
         if (currentUser) {
             fetchTasks();
             fetchDepartments();
-            fetchEmployees();
             fetchTeams();
         }
-    }, [currentUser?.id, currentUser?.permissions?.length, currentUser?.role, currentUser?.team_id, currentUser?.department_id, newTask.department_id, filterDeptId, filterTeamId, currentView]);
+    }, [currentUser?.id, currentUser?.role, currentUser?.team_id, currentUser?.department_id, filterDeptId, filterTeamId, currentView]);
+
+    // Separate effect for employees — only depends on the create modal department selection
+    useEffect(() => {
+        if (currentUser) {
+            fetchEmployees();
+        }
+    }, [currentUser?.id, currentUser?.role, currentUser?.department_id, newTask.department_id]);
 
     const fetchEmployees = async () => {
         let query = supabase.from('profiles').select('*, departments(name)');
@@ -64,7 +71,8 @@ export default function DashboardPage({
             : currentUser?.user_metadata?.role;
         const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
-        query = query.eq('role', 'EMPLOYEE');
+        // Show all assignable users (exclude only SUPER_ADMIN)
+        query = query.neq('role', 'SUPER_ADMIN');
 
         // Only allow direct assignment if:
         // 1. User is SUPER_ADMIN
@@ -100,6 +108,7 @@ export default function DashboardPage({
 
     const fetchTasks = async () => {
         if (!currentUser) return;
+        const currentFetchId = ++fetchIdRef.current;
         setLoading(true);
 
         try {
@@ -118,36 +127,47 @@ export default function DashboardPage({
                 team:teams(name)
             `);
 
-            // Apply visibility filters if not a global viewer
-            if (!canViewAll) {
-                const teamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
-                if (canViewDept && deptId) {
-                    // Head: View all in department OR tasks I created OR tasks for my team
-                    let filter = `department_id.eq.${deptId},creator_id.eq.${currentUser.id}`;
-                    if (teamId) filter += `,team_id.eq.${teamId}`;
-                    query = query.or(filter);
-                } else if (currentUser.id) {
-                    // Employee: View tasks assigned to me, created by me, or ANY in my department
-                    let filter = `assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`;
-                    if (deptId) filter += `,department_id.eq.${deptId}`;
-                    if (teamId) filter += `,team_id.eq.${teamId}`;
-                    query = query.or(filter);
+            // For 'assigned' view, skip all visibility & secondary filters — just get my tasks
+            if (currentView === 'assigned') {
+                query = query.eq('assignee_id', currentUser.id);
+            } else {
+                // Apply visibility filters if not a global viewer
+                if (!canViewAll) {
+                    const teamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
+                    if (canViewDept && deptId) {
+                        // Head: View all in department OR tasks I created OR tasks for my team
+                        let filter = `department_id.eq.${deptId},creator_id.eq.${currentUser.id}`;
+                        if (teamId) filter += `,team_id.eq.${teamId}`;
+                        query = query.or(filter);
+                    } else if (currentUser.id) {
+                        // Employee: View tasks assigned to me, created by me, or ANY in my department/team
+                        let filter = `assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`;
+                        if (deptId) filter += `,department_id.eq.${deptId}`;
+                        if (teamId) filter += `,team_id.eq.${teamId}`;
+                        query = query.or(filter);
+                    }
                 }
-            }
 
-            // Apply secondary filters (sidebar selection)
-            if (filterTeamId) {
-                query = query.eq('team_id', filterTeamId);
-            } else if (filterDeptId === 'EXTERNAL') {
-                query = query.eq('creator_id', currentUser.id).neq('department_id', deptId);
-            } else if (filterDeptId) {
-                query = query.eq('department_id', filterDeptId);
+                // Apply secondary filters (sidebar selection)
+                if (filterTeamId) {
+                    query = query.eq('team_id', filterTeamId);
+                } else if (filterDeptId === 'EXTERNAL') {
+                    query = query.eq('creator_id', currentUser.id).neq('department_id', deptId);
+                } else if (filterDeptId) {
+                    // Show department tasks + always include user's own assigned tasks and team tasks
+                    const teamId = currentUser?.team_id || currentUser?.user_metadata?.team_id;
+                    let deptFilter = `department_id.eq.${filterDeptId},assignee_id.eq.${currentUser.id}`;
+                    if (teamId) deptFilter += `,team_id.eq.${teamId}`;
+                    query = query.or(deptFilter);
+                }
             }
 
             const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
             if (fetchError) throw fetchError;
-            if (data) setTasks(data);
+            // Only update state if this is still the latest fetch
+            if (currentFetchId !== fetchIdRef.current) return;
+            setTasks(data || []);
         } catch (err: any) {
             console.error('Error fetching dashboard tasks:', err);
             setError('Failed to sync workload from central intelligence.');
@@ -234,7 +254,7 @@ export default function DashboardPage({
             } else if (currentView === 'cancelled') {
                 if (task.status !== 'CANCELLED') return false;
             } else {
-                // Dashboard view: hide approved/cancelled by default
+                // Dashboard/assigned view: hide approved/cancelled by default
                 if (task.status === 'APPROVED' || task.status === 'CANCELLED') return false;
             }
         }
@@ -246,7 +266,7 @@ export default function DashboardPage({
     const normalTasks = filteredTasks.filter(t => t.priority !== 'HIGH');
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             <TaskHeader
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -298,8 +318,51 @@ export default function DashboardPage({
                 </div>
             )}
 
+            {/* ASSIGNED TASKS VIEW */}
+            {currentView === 'assigned' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {highPriorityTasks.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-rose-600">
+                                <div className="w-2 h-2 rounded-none bg-rose-600 animate-pulse" />
+                                <h2 className="text-sm font-bold uppercase tracking-widest">High Priority Assigned</h2>
+                            </div>
+                            <TaskList
+                                tasks={highPriorityTasks}
+                                loading={loading}
+                                searchQuery={searchQuery}
+                                onTaskClick={onTaskClick}
+                            />
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                {highPriorityTasks.length > 0 ? 'Other Assigned Tasks' : 'All Assigned Tasks'}
+                            </h2>
+                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-none border border-slate-100 dark:border-slate-800 transition-colors">
+                                {normalTasks.length} {normalTasks.length === 1 ? 'Task' : 'Tasks'}
+                            </span>
+                        </div>
+                        <TaskList
+                            tasks={normalTasks}
+                            loading={loading}
+                            searchQuery={searchQuery}
+                            onTaskClick={onTaskClick}
+                        />
+
+                        {tasks.length === 0 && !loading && (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-12 text-center rounded-none transition-colors shadow-sm">
+                                <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">No tasks are currently assigned to you.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* DEPARTMENT/TEAM VIEW or HISTORY VIEW: Show task lists */}
-            {(filterDeptId || filterTeamId || currentView === 'approved' || currentView === 'cancelled') && (
+            {(filterDeptId || filterTeamId || currentView === 'approved' || currentView === 'cancelled') && currentView !== 'assigned' && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {highPriorityTasks.length > 0 && (
                         <div className="space-y-4">

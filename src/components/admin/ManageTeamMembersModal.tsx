@@ -37,16 +37,22 @@ export const ManageTeamMembersModal = ({
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const isAdmin = currentUser?.role === 'SUPER_ADMIN' || (currentUser as any)?.user_metadata?.role === 'SUPER_ADMIN';
-            const deptId = currentUser?.department_id;
+            const appRole = (currentUser?.role && currentUser?.role !== 'authenticated')
+                ? currentUser.role
+                : currentUser?.user_metadata?.role;
+            const isAdmin = appRole === 'SUPER_ADMIN';
+
+            // Priority: Filter by the team's department, fallback to user's assigned department
+            const targetDeptId = team?.department_id || currentUser?.department_id || currentUser?.user_metadata?.department_id;
 
             let query = supabase
                 .from('profiles')
                 .select('id, full_name, role, department_id, team_id, departments(name)')
                 .order('full_name');
 
-            if (!isAdmin && deptId) {
-                query = query.eq('department_id', deptId);
+            // If not admin, restrict to members of the target department
+            if (!isAdmin && targetDeptId) {
+                query = query.eq('department_id', targetDeptId);
             }
 
             const { data } = await query;
@@ -82,19 +88,21 @@ export const ManageTeamMembersModal = ({
             const toRemove = originalMembers.filter(id => !selectedUserIds.has(id));
             const toAdd = Array.from(selectedUserIds).filter(id => !originalMembers.includes(id));
 
-            if (toRemove.length > 0) {
-                await supabase.from('profiles').update({ team_id: null }).in('id', toRemove);
-            }
+            // Use a SECURITY DEFINER RPC so department heads can update other
+            // users' team_id (direct profile updates are blocked by RLS for non-owners).
+            const { error } = await supabase.rpc('assign_team_members', {
+                p_team_id: team.id,
+                p_add_ids: toAdd,
+                p_remove_ids: toRemove,
+            });
 
-            if (toAdd.length > 0) {
-                await supabase.from('profiles').update({ team_id: team.id }).in('id', toAdd);
-            }
+            if (error) throw error;
 
             onSaved();
             onClose();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error saving team members:', err);
-            alert('Failed to update squad roster.');
+            alert(`Failed to update squad roster: ${err.message || 'Unknown error'}`);
         } finally {
             setSaving(false);
         }

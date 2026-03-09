@@ -6,7 +6,8 @@ import {
     PieChart,
     Moon,
     Sun,
-    Calendar
+    Calendar,
+    UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../lib/ThemeContext';
@@ -25,8 +26,8 @@ interface SidebarProps {
     cancelledCount?: number;
     isOpen: boolean;
     onClose: () => void;
-    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar') => void;
-    currentView: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar';
+    onViewChange: (view: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar' | 'assigned') => void;
+    currentView: 'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar' | 'assigned';
     selectedTeamId: string | null;
     onTeamSelect: (id: string | null) => void;
     userTeams: any[];
@@ -112,7 +113,8 @@ export const Sidebar = ({
             </AnimatePresence>
 
             <aside className={`
-                w-72 bg-[#f8fafc] dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 h-[calc(100vh-64px)] fixed left-0 top-16 z-50
+                w-72 bg-[#f8fafc] dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 fixed left-0 top-14 lg:top-16 z-50
+                h-[calc(100dvh-56px)] lg:h-[calc(100vh-64px)]
                 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
                 ${isOpen ? 'translate-x-0 shadow-2xl dark:shadow-slate-900/50' : '-translate-x-full'}
                 lg:translate-x-0 lg:block lg:shadow-none
@@ -162,6 +164,25 @@ export const Sidebar = ({
                                     </button>
                                 </PermissionGuard>
                             ))}
+
+                            {/* Assigned Tasks - visible to all */}
+                            <button
+                                onClick={() => {
+                                    onDeptSelect(null);
+                                    onViewChange('assigned');
+                                    onClose();
+                                }}
+                                className={`
+                                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                                    ${currentView === 'assigned'
+                                        ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-sm border border-slate-100 dark:border-slate-800'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white'}
+                                `}
+                            >
+                                <UserCheck size={18} className={`${currentView === 'assigned' ? 'text-orange-600 dark:text-orange-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} transition-colors`} />
+                                <span className="text-sm font-semibold flex-1 text-left">Assigned Tasks</span>
+                                {currentView === 'assigned' && <div className="w-1.5 h-1.5 rounded-full bg-orange-600 dark:bg-orange-500 shadow-sm" />}
+                            </button>
                         </div>
 
                         <div className="space-y-1 pt-2">
