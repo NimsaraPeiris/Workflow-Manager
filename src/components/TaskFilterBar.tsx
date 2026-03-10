@@ -30,7 +30,7 @@ export const TaskFilterBar = ({
                     <select
                         value={filterDeptId || ''}
                         onChange={(e) => onDeptSelect?.(e.target.value || null)}
-                        className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-[10px] font-black uppercase tracking-widest dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-[8px] font-black uppercase tracking-widest dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                         <option value="">DEPT: ALL SYSTEMS</option>
                         {departments.map((dept) => (
@@ -41,7 +41,7 @@ export const TaskFilterBar = ({
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter?.(e.target.value)}
-                        className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-[10px] font-black uppercase tracking-widest dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-[8px] font-black uppercase tracking-widest dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                         <option value="ALL">STATUS: ANY</option>
                         <option value="CREATED">CREATED</option>
