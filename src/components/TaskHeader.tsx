@@ -1,33 +1,18 @@
 import { Search } from 'lucide-react';
-import { CreateTaskButton } from './permissions/tasks/CreateTaskButton';
 
-interface TaskHeaderProps {
-    searchQuery: string;
-    setSearchQuery: (query: string) => void;
-    onNewTask: () => void;
-    statusFilter?: string;
-    setStatusFilter?: (status: string) => void;
+export const TaskHeader = ({
+    currentView,
+    departments = [],
+    filterDeptId,
+    filterTeamId,
+    teams = []
+}: {
     currentView: string;
     departments?: any[];
     filterDeptId?: string | null;
     filterTeamId?: string | null;
     teams?: any[];
-    onDeptSelect?: (deptId: string | null) => void;
-}
-
-export const TaskHeader = ({
-    searchQuery,
-    setSearchQuery,
-    onNewTask,
-    statusFilter,
-    setStatusFilter,
-    currentView,
-    departments = [],
-    filterDeptId,
-    filterTeamId,
-    teams = [],
-    onDeptSelect
-}: TaskHeaderProps) => {
+}) => {
     const isHistory = currentView === 'approved' || currentView === 'cancelled';
     const selectedTeam = filterTeamId ? teams.find(t => t.id === filterTeamId) : null;
     const selectedDept = filterDeptId && filterDeptId !== 'EXTERNAL' ? departments.find(d => d.id === filterDeptId) : null;
@@ -43,54 +28,25 @@ export const TaskHeader = ({
             "Manage and track your team's progress";
 
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
-            <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">{title}</h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">{subtitle}</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search tasks..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none w-full md:w-48 transition-all text-sm dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm"
-                    />
+        <div className="space-y-2 hidden sm:block">
+            <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-orange-600 text-white rounded-none">
+                    <Search size={20} className="rotate-90" />
                 </div>
-
-                <select
-                    value={filterDeptId || ''}
-                    onChange={(e) => onDeptSelect?.(e.target.value || null)}
-                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm font-medium min-w-[140px] dark:text-slate-300"
-                >
-                    <option value="">All Departments</option>
-                    {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id} className="dark:bg-slate-900">{dept.name}</option>
-                    ))}
-                </select>
-
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter?.(e.target.value)}
-                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-none outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all text-sm font-medium dark:text-slate-300"
-                >
-                    <option value="ALL">All Statuses</option>
-                    <option value="CREATED">Created</option>
-                    <option value="ACCEPTED">Accepted</option>
-                    <option value="ASSIGNED">Assigned</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="SUBMITTED">Submitted</option>
-                    <option value="APPROVED">Approved</option>
-                    <option value="REJECTED">Rejected</option>
-                    <option value="CANCELLED">Cancelled</option>
-                    <option value="CANCEL_REQUESTED">Cancel Requested</option>
-                </select>
-
-                {currentView === 'dashboard' && (
-                    <CreateTaskButton onClick={onNewTask} />
-                )}
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                    {title}
+                </h1>
+            </div>
+            <div className="flex items-center gap-4">
+                <p className="text-slate-500 dark:text-slate-400 font-bold text-sm tracking-tight border-l-2 border-orange-500 pl-4">
+                    {subtitle}
+                </p>
+                <div className="hidden sm:flex items-center gap-2">
+                    <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
+                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                        System Integrity Active
+                    </span>
+                </div>
             </div>
         </div>
     );

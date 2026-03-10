@@ -106,38 +106,48 @@ export const Sidebar = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[55] lg:hidden"
                         onClick={onClose}
                     />
                 )}
             </AnimatePresence>
 
             <aside className={`
-                w-72 bg-[#f8fafc] dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 fixed left-0 top-14 lg:top-16 z-50
-                h-[calc(100dvh-56px)] lg:h-[calc(100vh-64px)]
+                w-80 bg-[#f8fafc] dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 fixed left-0 top-0 lg:top-16 z-[60] lg:z-50
+                h-full lg:h-[calc(100vh-64px)]
                 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-                ${isOpen ? 'translate-x-0 shadow-2xl dark:shadow-slate-900/50' : '-translate-x-full'}
+                ${isOpen ? 'translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.3)]' : '-translate-x-full'}
                 lg:translate-x-0 lg:block lg:shadow-none
             `}>
-                <div className="flex flex-col h-full transition-colors">
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                <div className="flex flex-col h-full transition-colors relative">
+                    {/* Mobile Header for Sidebar */}
+                    <div className="lg:hidden flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-slate-900 dark:bg-orange-600 rounded-lg" />
+                            <span className="font-black text-sm uppercase tracking-widest text-slate-900 dark:text-white">Workspace</span>
+                        </div>
+                        <button onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-900 rounded-xl text-slate-500 active:scale-90 transition-all">
+                            <Sun size={20} className="rotate-45" /> {/* Using an icon as a close glyph */}
+                        </button>
+                    </div>
 
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
                         {/* Summary Card for High Priority */}
                         {highPriorityCount > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-rose-600 dark:bg-rose-700 p-4 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 relative overflow-hidden group"
+                                className="bg-gradient-to-br from-rose-500 to-rose-700 p-5 text-white rounded-3xl shadow-xl shadow-rose-200 dark:shadow-none relative overflow-hidden group"
                             >
                                 <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex items-center gap-2 mb-2">
                                         <AlertCircle size={14} className="animate-pulse" />
-                                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Attention Required</span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Attention Required</span>
                                     </div>
-                                    <h4 className="text-xl font-bold">{highPriorityCount} Critical Tasks</h4>
-                                    <p className="text-[10px] opacity-70 mt-1">Found across your workspace</p>
+                                    <h4 className="text-2xl font-black leading-tight">{highPriorityCount} Issues</h4>
+                                    <p className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-widest text-rose-100">Critical Priority Tasks</p>
                                 </div>
-                                <AlertCircle className="absolute -right-4 -bottom-4 w-24 h-24 opacity-10 group-hover:rotate-12 transition-transform duration-500" />
+                                <AlertCircle className="absolute -right-4 -bottom-4 w-28 h-28 opacity-20 group-hover:rotate-12 transition-transform duration-700" />
                             </motion.div>
                         )}
 
@@ -152,14 +162,14 @@ export const Sidebar = ({
                                             onClose();
                                         }}
                                         className={`
-                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                                            w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group active:scale-[0.98]
                                             ${item.active
-                                                ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-sm border border-slate-100 dark:border-slate-800'
+                                                ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-md border border-slate-100 dark:border-slate-800'
                                                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white'}
                                         `}
                                     >
                                         <item.icon size={18} className={`${item.active ? 'text-orange-600 dark:text-orange-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} transition-colors`} />
-                                        <span className="text-sm font-semibold flex-1 text-left">{item.label}</span>
+                                        <span className="text-sm font-bold flex-1 text-left tracking-tight">{item.label}</span>
                                         {item.active && <div className="w-1.5 h-1.5 rounded-full bg-orange-600 dark:bg-orange-500 shadow-sm" />}
                                     </button>
                                 </PermissionGuard>
@@ -173,14 +183,14 @@ export const Sidebar = ({
                                     onClose();
                                 }}
                                 className={`
-                                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                                    w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group active:scale-[0.98]
                                     ${currentView === 'assigned'
-                                        ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-sm border border-slate-100 dark:border-slate-800'
+                                        ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-500 shadow-md border border-slate-100 dark:border-slate-800'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-white'}
                                 `}
                             >
                                 <UserCheck size={18} className={`${currentView === 'assigned' ? 'text-orange-600 dark:text-orange-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'} transition-colors`} />
-                                <span className="text-sm font-semibold flex-1 text-left">Assigned Tasks</span>
+                                <span className="text-sm font-bold flex-1 text-left tracking-tight">Assigned Tasks</span>
                                 {currentView === 'assigned' && <div className="w-1.5 h-1.5 rounded-full bg-orange-600 dark:bg-orange-500 shadow-sm" />}
                             </button>
                         </div>

@@ -68,7 +68,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             .select('id, full_name, department_id, team_id, role, departments(name), teams(name)');
 
         if (data) {
-            setUsers(data); // Include everyone, filtering will happen in the modal
+            setUsers(data);
         }
     };
 
@@ -91,7 +91,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 `)
                 .eq('id', taskId);
 
-            // Access Control Enforcement
             const canViewGlobal = hasPermission(currentUser, 'task:view');
             const canViewDept = hasPermission(currentUser, 'task:view_dept');
             const deptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
@@ -99,12 +98,10 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
             if (!canViewGlobal) {
                 if (canViewDept && deptId) {
-                    // Head/Dept viewing: can only see their own creations, tasks belonging to their department, or tasks for their team
                     let filter = `department_id.eq.${deptId},creator_id.eq.${currentUser.id}`;
                     if (teamId) filter += `,team_id.eq.${teamId}`;
                     query = query.or(filter);
                 } else {
-                    // Employee viewing: can only see tasks assigned to them, tasks they created, tasks for their team, or tasks in their department
                     let filter = `assignee_id.eq.${currentUser.id},creator_id.eq.${currentUser.id}`;
                     if (deptId) filter += `,department_id.eq.${deptId}`;
                     if (teamId) filter += `,team_id.eq.${teamId}`;
@@ -113,7 +110,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             }
 
             const { data, error: fetchError } = await (query as any).single();
-
             if (fetchError) throw new Error("Unauthorized Access: You do not have permission to view this task or it does not exist.");
             setTask(data);
         } catch (err: any) {
@@ -139,7 +135,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         }]);
 
         if (!error && (payload.activity_type === 'COMMENT' || payload.activity_type === 'ATTACHMENT')) {
-            // Ensure major events are captured in the central audit log
             await auditLogger.log({
                 userId: currentUser.id,
                 action: 'TASK_UPDATE',
@@ -189,6 +184,12 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
     };
 
     const handleUpdateStatus = async (newStatus: TaskStatus) => {
+        if (newStatus === 'CANCELLED' || newStatus === 'CANCEL_REQUESTED') {
+            setPendingStatus(newStatus);
+            setShowDecisionModal(true);
+            return;
+        }
+
         const confirmContent: Record<string, { title: string; description: string; confirmText: string; variant: 'primary' | 'danger' | 'warning' }> = {
             'ACCEPTED': {
                 title: 'Accept Task',
@@ -206,18 +207,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 title: 'Submit Task',
                 description: 'Are you sure you want to submit this task for approval? Ensure all work is complete.',
                 confirmText: 'Submit for Review',
-                variant: 'warning'
-            },
-            'CANCELLED': {
-                title: 'Cancel Task',
-                description: 'Are you sure you want to cancel this task? This action is permanent and will stop all work.',
-                confirmText: 'Yes, Cancel Task',
-                variant: 'danger'
-            },
-            'CANCEL_REQUESTED': {
-                title: 'Request Cancellation',
-                description: 'This task was created by someone else. Requesting cancellation will send a notification to the creator for final approval.',
-                confirmText: 'Send Request',
                 variant: 'warning'
             }
         };
@@ -240,20 +229,15 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             updated_at: new Date().toISOString()
         };
 
-        // TIME TRACKING LOGIC
         const now = new Date();
-
-        // If resuming or starting work, set the start timestamp
         if (newStatus === 'IN_PROGRESS') {
             updates.timer_started_at = now.toISOString();
         }
-
-        // If pausing or finishing work (moving away from IN_PROGRESS)
         if (oldStatus === 'IN_PROGRESS' && task?.timer_started_at) {
             const startTime = new Date(task.timer_started_at);
             const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
             updates.total_time_spent = (task.total_time_spent || 0) + elapsedSeconds;
-            updates.timer_started_at = null; // Clear timer when not in progress
+            updates.timer_started_at = null;
         }
 
         const { error } = await supabase
@@ -294,7 +278,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             updated_at: new Date().toISOString()
         };
 
-        // If finishing work through decision
         if (oldStatus === 'IN_PROGRESS' && task?.timer_started_at) {
             const now = new Date();
             const startTime = new Date(task.timer_started_at);
@@ -303,20 +286,18 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             updates.timer_started_at = null;
         }
 
-        // 1. Update status
         const { error } = await supabase
             .from('tasks')
             .update(updates)
             .eq('id', taskId);
 
         if (!error) {
-            // 2. Record decision comment
+            const commentPrefix = (status === 'CANCELLED' || status === 'CANCEL_REQUESTED') ? 'CANCELLATION REASON' : `${status.toUpperCase()} FEEDBACK`;
             await addActivity({
                 activity_type: 'COMMENT',
-                content: `${status.toUpperCase()} FEEDBACK: ${comment}`
+                content: `${commentPrefix}: ${comment}`
             });
 
-            // 3. Central Audit Log
             await auditLogger.log({
                 userId: currentUser.id,
                 action: 'TASK_STATUS_UPDATE',
@@ -326,7 +307,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                 newData: { status: status, reason: comment }
             });
 
-            // 4. Status change marker
             await addActivity({
                 activity_type: 'STATUS_CHANGE',
                 content: `${status} by requester`,
@@ -364,12 +344,9 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
     const executeAssignment = async (userId: string | null, teamId?: string | null, newDeptId?: string) => {
         setUpdating(true);
-        const updates: any = {
-            updated_at: new Date().toISOString()
-        };
+        const updates: any = { updated_at: new Date().toISOString() };
 
         if (newDeptId) {
-            // Find the head of the target department
             const { data: headProfile } = await supabase
                 .from('profiles')
                 .select('id')
@@ -384,7 +361,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             updates.status = 'ASSIGNED';
         } else if (teamId) {
             updates.team_id = teamId;
-            updates.assignee_id = null; // Unassign individual when assigning team
+            updates.assignee_id = null;
             updates.status = 'ASSIGNED';
         } else if (userId) {
             updates.assignee_id = userId;
@@ -392,10 +369,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             updates.status = 'ASSIGNED';
         }
 
-        const { error } = await supabase
-            .from('tasks')
-            .update(updates)
-            .eq('id', taskId);
+        const { error } = await supabase.from('tasks').update(updates).eq('id', taskId);
 
         if (!error) {
             const selectedUser = users.find(u => u.id === userId);
@@ -429,13 +403,13 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         }
         setUpdating(false);
     };
+
     const executeSubTaskToggle = async (id: string, isCompleted: boolean) => {
         if (!task) return;
         setUpdating(true);
         const sub = task.sub_tasks?.find(s => s.id === id);
         const updates: any = { is_completed: isCompleted, updated_at: new Date().toISOString() };
 
-        // Stop subtask timer if completing it
         if (isCompleted && sub?.timer_started_at) {
             const now = new Date();
             const startTime = new Date(sub.timer_started_at);
@@ -444,10 +418,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
             updates.timer_started_at = null;
         }
 
-        const { error } = await supabase
-            .from('sub_tasks')
-            .update(updates)
-            .eq('id', id);
+        const { error } = await supabase.from('sub_tasks').update(updates).eq('id', id);
 
         if (!error) {
             await addActivity({
@@ -464,7 +435,6 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
         }
         setUpdating(false);
     };
-
 
     const handleDateUpdate = async (newDate: string) => {
         if (!task) return;
@@ -587,8 +557,8 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             setConfirmConfig({
                                 title: isCompleted ? 'Finish Sub-task' : 'Reopen Sub-task',
                                 description: isCompleted
-                                    ? `Are you sure you want to mark "${sub?.title}" as finished?`
-                                    : `Are you sure you want to reopen "${sub?.title}"?`,
+                                    ? `Mark "${sub?.title}" as finished?`
+                                    : `Reopen "${sub?.title}"?`,
                                 confirmText: isCompleted ? 'Finish' : 'Reopen',
                                 variant: 'primary'
                             });
@@ -617,10 +587,7 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                         }}
                         onDelete={async (id: string) => {
                             const sub = task.sub_tasks?.find(s => s.id === id);
-                            const { error } = await supabase
-                                .from('sub_tasks')
-                                .delete()
-                                .eq('id', id);
+                            const { error } = await supabase.from('sub_tasks').delete().eq('id', id);
 
                             if (!error) {
                                 await addActivity({
@@ -640,13 +607,10 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
 
                             if (isStarting) {
                                 updates.timer_started_at = now.toISOString();
-                                // Also ensure the main task is IN_PROGRESS if we start a subtask?
-                                if (task.status !== 'IN_PROGRESS') {
-                                    await executeStatusUpdate('IN_PROGRESS');
-                                }
+                                if (task.status !== 'IN_PROGRESS') await executeStatusUpdate('IN_PROGRESS');
                                 await addActivity({
                                     activity_type: 'STATUS_CHANGE',
-                                    content: `Started working on sub-task: ${sub.title}`,
+                                    content: `Started work on sub-task: ${sub.title}`,
                                     field_name: 'sub_task_timer',
                                     new_value: 'STARTED'
                                 });
@@ -657,27 +621,14 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                                 updates.timer_started_at = null;
                                 await addActivity({
                                     activity_type: 'STATUS_CHANGE',
-                                    content: `Paused working on sub-task: ${sub.title}`,
+                                    content: `Paused work on sub-task: ${sub.title}`,
                                     field_name: 'sub_task_timer',
                                     new_value: 'STOPPED'
                                 });
                             }
 
-                            const { error } = await supabase
-                                .from('sub_tasks')
-                                .update(updates)
-                                .eq('id', id);
+                            const { error } = await supabase.from('sub_tasks').update(updates).eq('id', id);
                             if (!error) fetchTaskDetails();
-                        }}
-                    />
-
-                    <TaskActivityTimeline
-                        activities={(task as any).activities}
-                        uploading={uploading}
-                        onFileUpload={handleFileUpload}
-                        onAddComment={async (content) => {
-                            await addActivity({ activity_type: 'COMMENT', content });
-                            fetchTaskDetails();
                         }}
                     />
                 </div>
@@ -694,6 +645,18 @@ export default function TaskDetailsPage({ taskId, onBack, currentUser }: TaskDet
                             setShowDecisionModal(true);
                         }}
                         cancellationRequester={(task as any).activities?.find((a: any) => a.new_value === 'CANCEL_REQUESTED')?.profile?.full_name}
+                    />
+                </div>
+
+                <div className="lg:col-span-2 space-y-6">
+                    <TaskActivityTimeline
+                        activities={(task as any).activities}
+                        uploading={uploading}
+                        onFileUpload={handleFileUpload}
+                        onAddComment={async (content) => {
+                            await addActivity({ activity_type: 'COMMENT', content });
+                            fetchTaskDetails();
+                        }}
                     />
                 </div>
             </div>

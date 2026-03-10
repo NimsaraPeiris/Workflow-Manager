@@ -108,40 +108,42 @@ export default function AuditLogsPage() {
                 </button>
             </div>
 
-            {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Filter by action, user or ID..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white transition-all text-sm rounded-none"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <div className="flex items-center gap-2">
-                    <Filter className="text-slate-400 shrink-0" size={18} />
-                    <select
-                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white transition-all text-sm cursor-pointer rounded-none"
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                    >
-                        <option value="ALL">All Categories</option>
-                        <option value="Task">Workflow Tasks</option>
-                        <option value="Profile">User Accounts</option>
-                        <option value="Department">Departments</option>
-                        <option value="System">System Access</option>
-                    </select>
+            {/* Filters - Sticky */}
+            <div className="sticky top-0 z-20 bg-[#f8fafc] dark:bg-slate-950 py-4 -mx-4 px-4 border-b border-slate-200 dark:border-slate-800 transition-colors">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Filter by action, user or ID..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white transition-all text-sm rounded-none"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Filter className="text-slate-400 shrink-0" size={18} />
+                        <select
+                            className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 dark:text-white transition-all text-sm cursor-pointer rounded-none"
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                        >
+                            <option value="ALL">All Categories</option>
+                            <option value="Task">Workflow Tasks</option>
+                            <option value="Profile">User Accounts</option>
+                            <option value="Department">Departments</option>
+                            <option value="System">System Access</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* Logs List */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-none transition-colors">
-                <div className="overflow-x-auto">
+            {/* Logs List - Scrollable */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden rounded-none transition-colors border-t-0">
+                <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-sm">
+                            <tr className="border-b border-slate-100 dark:border-slate-800">
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Event Time</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Initiator</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Operation</th>

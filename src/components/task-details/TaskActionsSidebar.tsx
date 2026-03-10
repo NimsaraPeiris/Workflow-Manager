@@ -116,7 +116,7 @@ export const TaskActionsSidebar = ({
                                 )}
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <Button onClick={() => onUpdateStatus('CANCELLED')} variant="danger" loading={updating} className="h-10 text-xs font-bold active:scale-95">Confirm</Button>
+                                <Button onClick={() => onShowDecisionModal('CANCELLED')} variant="danger" loading={updating} className="h-10 text-xs font-bold active:scale-95">Confirm</Button>
                                 <Button onClick={() => onUpdateStatus('ASSIGNED')} variant="outline" loading={updating} className="h-10 text-xs font-bold dark:border-slate-700 dark:text-slate-300 active:scale-95">Keep Task</Button>
                             </div>
                         </div>
@@ -128,14 +128,14 @@ export const TaskActionsSidebar = ({
                     <div className="pt-2">
                         {/* Creator or Super Admin can cancel directly */}
                         <PermissionGuard permission="task:delete">
-                            <Button onClick={() => onUpdateStatus('CANCELLED')} variant="outline" className="w-full h-12 text-xs font-bold border-rose-100 text-rose-600 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-950/20 transition-all active:scale-95">Cancel Task</Button>
+                            <Button onClick={() => onShowDecisionModal('CANCELLED')} variant="outline" className="w-full h-12 text-xs font-bold border-rose-100 text-rose-600 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-950/20 transition-all active:scale-95">Cancel Task</Button>
                         </PermissionGuard>
 
                         {/* If not can delete, maybe can request cancellation (Head level) */}
                         <div className="mt-2">
                             <PermissionGuard permission="task:view_dept">
                                 {currentUser.id !== task.creator_id && (
-                                    <Button onClick={() => onUpdateStatus('CANCEL_REQUESTED')} variant="outline" className="w-full h-12 text-xs font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/30 dark:hover:bg-orange-950/20 transition-all active:scale-95" loading={updating}>Request Cancellation</Button>
+                                    <Button onClick={() => onShowDecisionModal('CANCEL_REQUESTED')} variant="outline" className="w-full h-12 text-xs font-bold border-orange-100 text-orange-600 hover:bg-orange-50 dark:border-orange-900/30 dark:hover:bg-orange-950/20 transition-all active:scale-95" loading={updating}>Request Cancellation</Button>
                                 )}
                             </PermissionGuard>
                         </div>

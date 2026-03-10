@@ -38,21 +38,24 @@ export const DecisionModal = ({
     if (!isOpen || !status) return null;
 
     const isReject = status === 'REJECTED';
+    const isCancel = status === 'CANCELLED' || status === 'CANCEL_REQUESTED';
 
     const config = {
-        title: isReject ? 'Reject Submission' : 'Approve Submission',
-        icon: isReject ? <XCircle className="text-rose-500" size={28} /> : <CheckCircle2 className="text-emerald-500" size={28} />,
+        title: isReject ? 'Reject Submission' : isCancel ? 'Cancel Task' : 'Approve Submission',
+        icon: isReject || isCancel ? <XCircle className="text-rose-500" size={28} /> : <CheckCircle2 className="text-emerald-500" size={28} />,
         description: isReject
             ? 'Providing clear feedback helps the assignee understand exactly what needs to be changed for a successful rework loop.'
-            : 'Formally approve this task. You can add optional feedback or closing notes for the record.',
-        placeholder: isReject ? 'Describe the changes required...' : 'Add feedback (optional)...',
-        confirmText: isReject ? 'Confirm Rejection' : 'Confirm Approval',
-        variant: isReject ? 'danger' as const : 'secondary' as const
+            : isCancel
+                ? 'Specify the reason for cancellation. This will be recorded in the activity timeline and notify relevant stakeholders.'
+                : 'Formally approve this task. You can add optional feedback or closing notes for the record.',
+        placeholder: isReject ? 'Describe the changes required...' : isCancel ? 'Enter cancellation reason...' : 'Add feedback (optional)...',
+        confirmText: isReject ? 'Confirm Rejection' : isCancel ? 'Cancel Task' : 'Confirm Approval',
+        variant: isReject || isCancel ? 'danger' as const : 'secondary' as const
     };
 
     const handleConfirm = () => {
-        if (isReject && !comment.trim()) {
-            setError('A comment is required for rejection');
+        if ((isReject || isCancel) && !comment.trim()) {
+            setError(`A comment is required for ${isCancel ? 'cancellation' : 'rejection'}`);
             return;
         }
         onConfirm(status, comment.trim());

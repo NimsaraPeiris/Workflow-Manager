@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Clock, ChevronRight, User as UserIcon, Building2, Flag, Users } from 'lucide-react';
+import { Clock, ChevronRight, User as UserIcon, Flag, Users } from 'lucide-react';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { Task, TaskStatus } from '../types';
 import { Badge } from './ui/Badge';
@@ -129,21 +129,22 @@ export const TaskCard = ({ task, onClick, variant = 'default' }: TaskCardProps) 
                             )}
 
                             {task.department?.name && (
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-400 dark:text-blue-500 uppercase tracking-widest bg-blue-50/50 dark:bg-blue-900/20 px-2 py-1 rounded-none pointer-events-none transition-colors">
-                                    <Building2 size={10} />
+                                <div className="flex items-center gap-1 text-[9px] font-black text-blue-500 uppercase tracking-[0.15em] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-lg">
                                     {task.department.name}
                                 </div>
                             )}
                         </div>
 
-                        <div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-500 transition-colors leading-tight mb-1">
+                        <div className="space-y-1.5">
+                            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-500 transition-colors leading-tight tracking-tight line-clamp-2">
                                 {task.title}
                             </h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1 max-w-3xl font-medium">
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 max-w-3xl font-medium tracking-tight">
                                 {task.description || 'No description provided.'}
                             </p>
                         </div>
+
+                        <div className="w-12 h-[1px] bg-slate-100 dark:bg-slate-800" />
 
                         {/* Assignee and Creator Info */}
                         <div className="flex flex-wrap items-center gap-6 pt-2">

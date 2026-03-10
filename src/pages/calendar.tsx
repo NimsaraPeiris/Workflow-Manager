@@ -26,9 +26,10 @@ import { useState, useEffect } from 'react';
 interface CalendarViewProps {
     currentUser: any;
     onTaskClick: (taskId: string) => void;
+    onDateClick?: (date: Date) => void;
 }
 
-export default function CalendarView({ currentUser, onTaskClick }: CalendarViewProps) {
+export default function CalendarView({ currentUser, onTaskClick, onDateClick }: CalendarViewProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -211,7 +212,7 @@ export default function CalendarView({ currentUser, onTaskClick }: CalendarViewP
                 )}
 
                 <div className={`grid ${viewMode === 'day' ? 'grid-cols-1' : 'grid-cols-7'}`}>
-                    {calendarDays.map((day, idx) => {
+                    {calendarDays.map((day) => {
                         const dayTasks = tasks.filter(t => t.due_date && t.due_date.startsWith(format(day, 'yyyy-MM-dd')));
                         const isCurrentMonth = viewMode === 'month' ? isSameMonth(day, startOfMonth(currentDate)) : true;
                         const isToday = isSameDay(day, new Date());
@@ -225,9 +226,10 @@ export default function CalendarView({ currentUser, onTaskClick }: CalendarViewP
                                     ${dayTasks.length > 0
                                         ? 'bg-orange-100/40 dark:bg-orange-500/[0.08]'
                                         : !isCurrentMonth ? 'bg-slate-50/30 dark:bg-slate-950/20' : 'bg-white dark:bg-slate-900'}
-                                    ${idx % 7 === 6 || viewMode === 'day' ? 'border-r-0' : ''}
                                     ${viewMode !== 'day' ? 'hover:bg-slate-50/80 dark:hover:bg-slate-800/30' : ''}
+                                    ${onDateClick ? 'cursor-pointer' : ''}
                                 `}
+                                onClick={() => onDateClick && onDateClick(day)}
                             >
                                 {dayTasks.length > 0 && (
                                     <>
@@ -268,7 +270,10 @@ export default function CalendarView({ currentUser, onTaskClick }: CalendarViewP
                                             whileHover={{ x: 4 }}
                                             whileTap={{ scale: 0.98 }}
                                             key={task.id}
-                                            onClick={() => onTaskClick(task.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onTaskClick(task.id);
+                                            }}
                                             className={`
                                                 w-full text-left rounded-xl bg-white dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group overflow-hidden relative
                                                 ${viewMode === 'day' ? 'p-4' : 'p-1 sm:p-2'}

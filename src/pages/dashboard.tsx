@@ -3,10 +3,9 @@ import { supabase } from '../lib/supabaseClient';
 import { hasPermission } from '../lib/permissions';
 import type { Task } from '../types';
 import { TaskHeader } from '../components/TaskHeader';
+import { TaskFilterBar } from '../components/TaskFilterBar';
 import { TaskList } from '../components/TaskList';
-import { CreateTaskModal } from '../components/CreateTaskModal';
 import { PerformanceTiles } from '../components/PerformanceTiles';
-import { auditLogger } from '../lib/auditLogger';
 
 interface DashboardPageProps {
     onTaskClick: (taskId: string) => void;
@@ -14,8 +13,8 @@ interface DashboardPageProps {
     filterDeptId: string | null;
     filterTeamId: string | null;
     onDeptSelect: (deptId: string | null) => void;
-    onRefreshStats: () => void;
     currentView: 'dashboard' | 'audit' | 'users' | 'approved' | 'cancelled' | 'assigned';
+    onOpenCreateModal: () => void;
 }
 
 export default function DashboardPage({
@@ -24,77 +23,14 @@ export default function DashboardPage({
     filterDeptId,
     filterTeamId,
     onDeptSelect,
-    onRefreshStats,
-    currentView
+    currentView,
+    onOpenCreateModal
 }: DashboardPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [createLoading, setCreateLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('ALL');
-
-    const [newTask, setNewTask] = useState({
-        title: '',
-        description: '',
-        priority: 'MEDIUM',
-        due_date: '',
-        department_id: '',
-        assignee_id: '',
-        team_id: ''
-    });
     const [departments, setDepartments] = useState<any[]>([]);
-    const [employees, setEmployees] = useState<any[]>([]);
     const [teams, setTeams] = useState<any[]>([]);
     const fetchIdRef = useRef(0);
-
-    useEffect(() => {
-        if (currentUser) {
-            fetchTasks();
-            fetchDepartments();
-            fetchTeams();
-        }
-    }, [currentUser?.id, currentUser?.role, currentUser?.team_id, currentUser?.department_id, filterDeptId, filterTeamId, currentView]);
-
-    // Separate effect for employees — only depends on the create modal department selection
-    useEffect(() => {
-        if (currentUser) {
-            fetchEmployees();
-        }
-    }, [currentUser?.id, currentUser?.role, currentUser?.department_id, newTask.department_id]);
-
-    const fetchEmployees = async () => {
-        let query = supabase.from('profiles').select('*, departments(name)');
-        const appRole = (currentUser?.role && currentUser?.role !== 'authenticated')
-            ? currentUser.role
-            : currentUser?.user_metadata?.role;
-        const userDeptId = currentUser?.department_id || currentUser?.user_metadata?.department_id;
-
-        // Show all assignable users (exclude only SUPER_ADMIN)
-        query = query.neq('role', 'SUPER_ADMIN');
-
-        // Only allow direct assignment if:
-        // 1. User is SUPER_ADMIN
-        // 2. User is HEAD and the target department is THEIR department
-        if (appRole !== 'SUPER_ADMIN') {
-            if (newTask.department_id && newTask.department_id !== userDeptId) {
-                setEmployees([]); // Cannot assign to other department's employees directly
-                return;
-            }
-            // For general list, if no dept selected, default to their own
-            if (!newTask.department_id) {
-                query = query.eq('department_id', userDeptId);
-            } else {
-                query = query.eq('department_id', newTask.department_id);
-            }
-        } else if (newTask.department_id) {
-            query = query.eq('department_id', newTask.department_id);
-        }
-
-        const { data } = await query.order('full_name');
-        if (data) setEmployees(data);
-    };
 
     const fetchDepartments = async () => {
         const { data } = await supabase.from('departments').select('*').order('name');
@@ -105,6 +41,14 @@ export default function DashboardPage({
         const { data } = await supabase.from('teams').select('*, departments(name)').order('name');
         if (data) setTeams(data);
     };
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchTasks();
+            fetchDepartments();
+            fetchTeams();
+        }
+    }, [currentUser?.id, currentUser?.role, currentUser?.team_id, currentUser?.department_id, filterDeptId, filterTeamId, currentView]);
 
     const fetchTasks = async () => {
         if (!currentUser) return;
@@ -170,74 +114,13 @@ export default function DashboardPage({
             setTasks(data || []);
         } catch (err: any) {
             console.error('Error fetching dashboard tasks:', err);
-            setError('Failed to sync workload from central intelligence.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreateTask = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setCreateLoading(true);
-        setError('');
-
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
-            setError('You must be logged in to create a task');
-            setCreateLoading(false);
-            return;
-        }
-
-        // Safety check: ensure the profile exists to prevent foreign key violations (tasks_creator_id_fkey)
-        const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
-        if (!profile) {
-            console.log('Profile missing during task creation, auto-provisioning...');
-            const { error: profileError } = await supabase.from('profiles').insert([{
-                id: user.id,
-                full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
-                department_id: user.user_metadata?.department_id || null,
-                role: user.user_metadata?.role || 'EMPLOYEE',
-                permissions: user.user_metadata?.permissions || []
-            }]);
-            if (profileError) {
-                console.error('Failed to auto-provision profile:', profileError);
-                // We'll proceed anyway, database FK will catch it, but at least we tried
-            }
-        }
-
-        const { data: createdTasks, error: createError } = await supabase
-            .from('tasks')
-            .insert([
-                {
-                    ...newTask,
-                    due_date: newTask.due_date || null,
-                    department_id: newTask.department_id || null,
-                    assignee_id: newTask.assignee_id || null,
-                    team_id: newTask.team_id || null,
-                    creator_id: user.id,
-                    status: (newTask.assignee_id || newTask.team_id) ? 'ASSIGNED' : 'CREATED'
-                }
-            ])
-            .select();
-
-        if (createError) {
-            setError(createError.message);
-        } else {
-            await auditLogger.log({
-                userId: user.id,
-                action: 'TASK_CREATE',
-                entityType: 'Task',
-                entityId: createdTasks?.[0]?.id,
-                newData: newTask
-            });
-            setIsModalOpen(false);
-            setNewTask({ title: '', description: '', priority: 'MEDIUM', due_date: '', department_id: '', assignee_id: '', team_id: '' });
-            fetchTasks();
-            onRefreshStats();
-        }
-        setCreateLoading(false);
-    };
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const filteredTasks = tasks.filter(task => {
         const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -266,39 +149,46 @@ export default function DashboardPage({
     const normalTasks = filteredTasks.filter(t => t.priority !== 'HIGH');
 
     return (
-        <div className="space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-8 pb-12">
             <TaskHeader
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                onNewTask={() => setIsModalOpen(true)}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
                 currentView={currentView}
                 departments={departments}
                 filterDeptId={filterDeptId}
                 filterTeamId={filterTeamId}
                 teams={teams}
-                onDeptSelect={onDeptSelect}
             />
 
-            {/* OVERVIEW MODE: Only show performance tiles on Dashboard view when no filter is active */}
+            {/* OVERVIEW MODE: Performance Info -> Filters -> List */}
             {!filterDeptId && !filterTeamId && !loading && currentView === 'dashboard' && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="h-8 w-1 bg-orange-600 rounded-none" />
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Organization Overview</h2>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight uppercase">Organization Performance</h2>
                     </div>
 
-                    {tasks.length > 0 ? (
-                        <div className="space-y-6">
-                            <PerformanceTiles tasks={tasks} />
-                            <div className="pt-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                        {hasPermission(currentUser, 'task:view') ? 'All Organization Tasks' : 'My Department Tasks'}
+                    {tasks.length > 0 && <PerformanceTiles tasks={tasks} />}
+
+                    <div className="space-y-8">
+                        <TaskFilterBar
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            statusFilter={statusFilter}
+                            setStatusFilter={setStatusFilter}
+                            departments={departments}
+                            filterDeptId={filterDeptId}
+                            onDeptSelect={onDeptSelect}
+                            currentView={currentView}
+                            onNewTask={onOpenCreateModal}
+                        />
+
+                        {tasks.length > 0 ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+                                        {hasPermission(currentUser, 'task:view') ? 'Enterprise Activity Feed' : 'Departmental Queue'}
                                     </h3>
-                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-none font-bold">
-                                        {filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}
+                                    <span className="text-[10px] bg-white dark:bg-slate-900 text-slate-500 border border-slate-100 dark:border-slate-800 px-3 py-1 rounded-none font-black uppercase tracking-widest shadow-sm">
+                                        {filteredTasks.length} Units Detected
                                     </span>
                                 </div>
                                 <TaskList
@@ -309,114 +199,107 @@ export default function DashboardPage({
                                     variant="brief"
                                 />
                             </div>
+                        ) : (
+                            <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-16 text-center rounded-none transition-colors">
+                                <p className="text-[10px] text-slate-400 dark:text-slate-600 font-bold uppercase tracking-[0.2em]">Zero Activity Detected in current Intelligence Scope</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ASSIGNED / FILTERED VIEWS: Filters -> List */}
+            {(filterDeptId || filterTeamId || currentView !== 'dashboard') && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <TaskFilterBar
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        statusFilter={statusFilter}
+                        setStatusFilter={setStatusFilter}
+                        departments={departments}
+                        filterDeptId={filterDeptId}
+                        onDeptSelect={onDeptSelect}
+                        currentView={currentView}
+                        onNewTask={onOpenCreateModal}
+                    />
+
+                    {currentView === 'assigned' ? (
+                        <div className="space-y-8">
+                            {highPriorityTasks.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-rose-600">
+                                        <div className="w-2 h-2 rounded-none bg-rose-600 animate-pulse" />
+                                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">High Priority Assigned</h2>
+                                    </div>
+                                    <TaskList
+                                        tasks={highPriorityTasks}
+                                        loading={loading}
+                                        searchQuery={searchQuery}
+                                        onTaskClick={onTaskClick}
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+                                        {highPriorityTasks.length > 0 ? 'Secondary Workload' : 'Direct Assignments'}
+                                    </h2>
+                                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em]">
+                                        {normalTasks.length} Active Records
+                                    </span>
+                                </div>
+                                <TaskList
+                                    tasks={normalTasks}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    onTaskClick={onTaskClick}
+                                />
+                            </div>
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center rounded-none transition-colors">
-                            <p className="text-slate-400 dark:text-slate-600 font-medium">No organizational data available for the current period.</p>
+                        <div className="space-y-8">
+                            {highPriorityTasks.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-rose-600">
+                                        <div className="w-2 h-2 rounded-none bg-rose-600 animate-pulse" />
+                                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">Critical Exposure</h2>
+                                    </div>
+                                    <TaskList
+                                        tasks={highPriorityTasks}
+                                        loading={loading}
+                                        searchQuery={searchQuery}
+                                        onTaskClick={onTaskClick}
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between hidden md:block">
+                                    <h2 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+                                        {filterTeamId ? 'Regional Squad Workload' : 'Project Pipeline'}
+                                    </h2>
+                                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em]">
+                                        {normalTasks.length} Results Found
+                                    </span>
+                                </div>
+                                <TaskList
+                                    tasks={normalTasks}
+                                    loading={loading}
+                                    searchQuery={searchQuery}
+                                    onTaskClick={onTaskClick}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {tasks.length === 0 && !loading && (
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-16 text-center rounded-none shadow-sm">
+                            <p className="text-slate-400 dark:text-slate-600 text-sm font-bold uppercase tracking-widest">Zero Intelligence Found for this Query</p>
                         </div>
                     )}
                 </div>
             )}
-
-            {/* ASSIGNED TASKS VIEW */}
-            {currentView === 'assigned' && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {highPriorityTasks.length > 0 && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-rose-600">
-                                <div className="w-2 h-2 rounded-none bg-rose-600 animate-pulse" />
-                                <h2 className="text-sm font-bold uppercase tracking-widest">High Priority Assigned</h2>
-                            </div>
-                            <TaskList
-                                tasks={highPriorityTasks}
-                                loading={loading}
-                                searchQuery={searchQuery}
-                                onTaskClick={onTaskClick}
-                            />
-                        </div>
-                    )}
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                {highPriorityTasks.length > 0 ? 'Other Assigned Tasks' : 'All Assigned Tasks'}
-                            </h2>
-                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-none border border-slate-100 dark:border-slate-800 transition-colors">
-                                {normalTasks.length} {normalTasks.length === 1 ? 'Task' : 'Tasks'}
-                            </span>
-                        </div>
-                        <TaskList
-                            tasks={normalTasks}
-                            loading={loading}
-                            searchQuery={searchQuery}
-                            onTaskClick={onTaskClick}
-                        />
-
-                        {tasks.length === 0 && !loading && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-12 text-center rounded-none transition-colors shadow-sm">
-                                <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">No tasks are currently assigned to you.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* DEPARTMENT/TEAM VIEW or HISTORY VIEW: Show task lists */}
-            {(filterDeptId || filterTeamId || currentView === 'approved' || currentView === 'cancelled') && currentView !== 'assigned' && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {highPriorityTasks.length > 0 && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-rose-600">
-                                <div className="w-2 h-2 rounded-none bg-rose-600 animate-pulse" />
-                                <h2 className="text-sm font-bold uppercase tracking-widest">High Priority Actions</h2>
-                            </div>
-                            <TaskList
-                                tasks={highPriorityTasks}
-                                loading={loading}
-                                searchQuery={searchQuery}
-                                onTaskClick={onTaskClick}
-                            />
-                        </div>
-                    )}
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                {filterTeamId ? 'Detailed Squad Workload' : (highPriorityTasks.length > 0 ? 'General Tasks' : 'All Department Tasks')}
-                            </h2>
-                            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-none border border-slate-100 dark:border-slate-800 transition-colors">
-                                {normalTasks.length} {normalTasks.length === 1 ? 'Task' : 'Tasks'}
-                            </span>
-                        </div>
-                        <TaskList
-                            tasks={normalTasks}
-                            loading={loading}
-                            searchQuery={searchQuery}
-                            onTaskClick={onTaskClick}
-                        />
-
-                        {tasks.length === 0 && !loading && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-12 text-center rounded-none transition-colors shadow-sm">
-                                <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">No tasks found for this department yet.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <CreateTaskModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={handleCreateTask}
-                loading={createLoading}
-                error={error}
-                newTask={newTask}
-                setNewTask={setNewTask}
-                departments={departments}
-                employees={employees}
-                teams={teams}
-                currentUser={currentUser}
-            />
         </div>
     );
 }

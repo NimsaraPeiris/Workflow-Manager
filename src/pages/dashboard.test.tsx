@@ -44,13 +44,6 @@ describe('DashboardPage UI & Logic', () => {
         permissions: ['task:create', 'task:view_dept']
     };
 
-    const mockUserEmployee = {
-        id: 'user-2',
-        role: 'EMPLOYEE',
-        department_id: 'dept-1',
-        user_metadata: { role: 'EMPLOYEE', department_id: 'dept-1' },
-        permissions: []
-    };
 
     const mockProps = {
         onTaskClick: vi.fn(),
@@ -58,7 +51,7 @@ describe('DashboardPage UI & Logic', () => {
         filterDeptId: null,
         filterTeamId: null,
         onDeptSelect: vi.fn(),
-        onRefreshStats: vi.fn(),
+        onOpenCreateModal: vi.fn(),
         currentView: 'dashboard' as const
     };
 
@@ -66,36 +59,31 @@ describe('DashboardPage UI & Logic', () => {
         vi.clearAllMocks();
     });
 
-    it('renders the Dashboard header titles', () => {
+    it('renders the Dashboard header titles', async () => {
         render(<DashboardPage {...mockProps} />);
-        expect(screen.getByText('Workflow Management')).toBeInTheDocument();
+        expect(await screen.findByText(/Workflow Management/i)).toBeInTheDocument();
         expect(screen.getByText(/Manage and track your team's progress/i)).toBeInTheDocument();
     });
 
-    it('conditionally renders "New Task" button based on role', () => {
-        const { rerender } = render(<DashboardPage {...mockProps} />);
-        expect(screen.getByText(/Create Task/i)).toBeInTheDocument();
-
-        rerender(<DashboardPage {...mockProps} currentUser={mockUserEmployee} />);
-        // Employee without task:create permission should not see the button
-        // Since usePermissions is mocked globally, we just check it renders
+    it('conditionally renders "Initiate Terminal" button based on role', async () => {
+        render(<DashboardPage {...mockProps} />);
+        expect(await screen.findByText(/Initiate Terminal/i)).toBeInTheDocument();
     });
 
-    it('updates the search input when typing', () => {
+    it('updates the search input when typing', async () => {
         render(<DashboardPage {...mockProps} />);
-        const searchInput = screen.getByPlaceholderText(/Search tasks/i);
+        const searchInput = await screen.findByPlaceholderText(/Search for intelligence/i);
 
         fireEvent.change(searchInput, { target: { value: 'Draft' } });
         expect(searchInput).toHaveValue('Draft');
     });
 
-    it('shows the Create Task modal when the Create Task button is clicked', async () => {
+    it('calls onOpenCreateModal when the Initiate Terminal button is clicked', async () => {
         render(<DashboardPage {...mockProps} />);
 
-        const newBtn = screen.getByText(/Create Task/i);
+        const newBtn = await screen.findByText(/Initiate Terminal/i);
         fireEvent.click(newBtn);
 
-        expect(screen.getByText(/Task Title/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/e.g. Design Landing Page/i)).toBeInTheDocument();
+        expect(mockProps.onOpenCreateModal).toHaveBeenCalled();
     });
 });

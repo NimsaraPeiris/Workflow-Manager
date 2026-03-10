@@ -11,9 +11,13 @@ import UserManagementPage from '../pages/admin/UserManagement';
 import CalendarView from '../pages/calendar';
 import { supabase } from '../lib/supabaseClient';
 import { Sidebar } from '../components/Sidebar';
+import { BottomNav } from '../components/BottomNav';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { ThemeProvider } from '../lib/ThemeContext';
 import { hasPermission } from '../lib/permissions';
+import { CreateTaskModal } from '../components/CreateTaskModal';
+import { auditLogger } from '../lib/auditLogger';
+import { format } from 'date-fns';
 
 export default function App() {
     return (
@@ -42,6 +46,22 @@ function AppContent() {
     const [currentView, setCurrentView] = useState<'dashboard' | 'audit' | 'users' | 'teams' | 'approved' | 'cancelled' | 'calendar' | 'assigned'>('dashboard');
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [loadingError, setLoadingError] = useState<string | null>(null);
+
+    // Global Task Creation State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [createLoading, setCreateLoading] = useState(false);
+    const [createError, setCreateError] = useState('');
+    const [employees, setEmployees] = useState<any[]>([]);
+    const [allTeams, setAllTeams] = useState<any[]>([]);
+    const [newTask, setNewTask] = useState({
+        title: '',
+        description: '',
+        priority: 'MEDIUM',
+        due_date: '',
+        department_id: '',
+        assignee_id: '',
+        team_id: ''
+    });
 
     const loadUserData = async (authUser: any, isMounted: boolean) => {
         try {
@@ -118,6 +138,97 @@ function AppContent() {
         }
     };
 
+    const fetchEmployeesForModal = async (departmentId?: string) => {
+        if (!user) return;
+        let query = supabase.from('profiles').select('*, departments(name)');
+        const appRole = (user?.role && user?.role !== 'authenticated')
+            ? user.role
+            : user?.user_metadata?.role;
+        const userDeptId = user?.department_id || user?.user_metadata?.department_id;
+
+        // Show all assignable users (exclude only SUPER_ADMIN)
+        query = query.neq('role', 'SUPER_ADMIN');
+
+        if (appRole !== 'SUPER_ADMIN') {
+            if (departmentId && departmentId !== userDeptId) {
+                setEmployees([]);
+                return;
+            }
+            if (!departmentId) {
+                query = query.eq('department_id', userDeptId);
+            } else {
+                query = query.eq('department_id', departmentId);
+            }
+        } else if (departmentId) {
+            query = query.eq('department_id', departmentId);
+        }
+
+        const { data } = await query.order('full_name');
+        if (data) setEmployees(data);
+    };
+
+    const fetchAllTeams = async () => {
+        const { data } = await supabase.from('teams').select('*, departments(name)').order('name');
+        if (data) setAllTeams(data);
+    };
+
+    useEffect(() => {
+        if (user && isCreateModalOpen) {
+            fetchEmployeesForModal(newTask.department_id);
+            fetchAllTeams();
+        }
+    }, [user?.id, isCreateModalOpen, newTask.department_id]);
+
+    const handleCreateTask = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCreateLoading(true);
+        setCreateError('');
+
+        if (!user) {
+            setCreateError('You must be logged in to create a task');
+            setCreateLoading(false);
+            return;
+        }
+
+        const { data: createdTasks, error: createError } = await supabase
+            .from('tasks')
+            .insert([
+                {
+                    ...newTask,
+                    due_date: newTask.due_date || null,
+                    department_id: newTask.department_id || null,
+                    assignee_id: newTask.assignee_id || null,
+                    team_id: newTask.team_id || null,
+                    creator_id: user.id,
+                    status: (newTask.assignee_id || newTask.team_id) ? 'ASSIGNED' : 'CREATED'
+                }
+            ])
+            .select();
+
+        if (createError) {
+            setCreateError(createError.message);
+        } else {
+            await auditLogger.log({
+                userId: user.id,
+                action: 'TASK_CREATE',
+                entityType: 'Task',
+                entityId: createdTasks?.[0]?.id,
+                newData: newTask
+            });
+            setIsCreateModalOpen(false);
+            setNewTask({ title: '', description: '', priority: 'MEDIUM', due_date: '', department_id: '', assignee_id: '', team_id: '' });
+            fetchStats();
+        }
+        setCreateLoading(false);
+    };
+
+    const openCreateModal = (date?: Date) => {
+        if (date) {
+            setNewTask(prev => ({ ...prev, due_date: format(date, 'yyyy-MM-dd') }));
+        }
+        setIsCreateModalOpen(true);
+    };
+
     useEffect(() => {
         let isMounted = true;
         let authSubscription: any = null;
@@ -129,7 +240,7 @@ function AppContent() {
                 setLoading(false);
                 setLoadingError("Initialization taking longer than expected. System fallback engaged.");
             }
-        }, 15000); // Increased to 15s
+        }, 1000); // Increased to 15s
 
         const init = async () => {
             try {
@@ -409,7 +520,13 @@ function AppContent() {
                 user={user}
             />
 
-            <main className="lg:ml-72 pt-16 lg:pt-20 min-h-screen overflow-x-hidden transition-all">
+            <BottomNav
+                currentView={currentView}
+                onViewChange={setCurrentView}
+                onOpenCreateModal={() => openCreateModal()}
+            />
+
+            <main className="lg:ml-72 pt-16 lg:pt-20 pb-24 lg:pb-8 min-h-screen overflow-x-hidden transition-all">
                 <div className="max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-8 lg:px-12">
                     {currentView === 'users' ? (
                         <UserManagementPage currentUser={user} onUserUpdate={refreshCurrentUser} />
@@ -424,7 +541,11 @@ function AppContent() {
                             currentUser={user}
                         />
                     ) : currentView === 'calendar' ? (
-                        <CalendarView currentUser={user} onTaskClick={(id) => setSelectedTaskId(id)} />
+                        <CalendarView
+                            currentUser={user}
+                            onTaskClick={(id) => setSelectedTaskId(id)}
+                            onDateClick={(date: Date) => openCreateModal(date)}
+                        />
                     ) : (
                         <DashboardPage
                             key={currentView}
@@ -433,12 +554,26 @@ function AppContent() {
                             filterDeptId={selectedDeptId}
                             filterTeamId={selectedTeamId}
                             onDeptSelect={setSelectedDeptId}
-                            onRefreshStats={fetchStats}
                             currentView={currentView}
+                            onOpenCreateModal={() => openCreateModal()}
                         />
                     )}
                 </div>
             </main>
+
+            <CreateTaskModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSubmit={handleCreateTask}
+                loading={createLoading}
+                error={createError}
+                newTask={newTask}
+                setNewTask={setNewTask}
+                departments={departments}
+                employees={employees}
+                teams={allTeams}
+                currentUser={user}
+            />
             <ConfirmationModal
                 isOpen={showLogoutConfirm}
                 onClose={() => setShowLogoutConfirm(false)}

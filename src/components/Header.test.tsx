@@ -30,8 +30,13 @@ describe('Header', () => {
 
     it('renders user information correctly', () => {
         render(<Header {...mockProps} />);
+        expect(screen.getByText(/HEAD/i)).toBeInTheDocument();
+        expect(screen.getByText('John')).toBeInTheDocument();
+
+        // Open user menu to see email
+        fireEvent.click(screen.getByText('John'));
         expect(screen.getByText('test@example.com')).toBeInTheDocument();
-        expect(screen.getByText(/HEAD • John Doe/i)).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
     it('shows "EMPLOYEE" if role is EMPLOYEE', () => {
@@ -46,7 +51,8 @@ describe('Header', () => {
             }
         };
         render(<Header {...mockProps} user={employeeUser} />);
-        expect(screen.getByText(/EMPLOYEE • Jane Smith/i)).toBeInTheDocument();
+        expect(screen.getByText(/EMPLOYEE/i)).toBeInTheDocument();
+        expect(screen.getByText('Jane')).toBeInTheDocument();
     });
 
     it('calls onLogout when logout button is clicked', () => {
