@@ -526,8 +526,8 @@ function AppContent() {
                 onOpenCreateModal={() => openCreateModal()}
             />
 
-            <main className="lg:ml-72 pt-16 lg:pt-20 pb-24 lg:pb-8 min-h-screen overflow-x-hidden transition-all">
-                <div className="max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-8 lg:px-12">
+            <main className="lg:ml-72 lg:pt-20 pb-24 lg:pb-8 min-h-screen overflow-x-hidden transition-all">
+                <div className="max-w-7xl mx-auto py-2 sm:py-8 px-4 sm:px-8 lg:px-12">
                     {currentView === 'users' ? (
                         <UserManagementPage currentUser={user} onUserUpdate={refreshCurrentUser} />
                     ) : currentView === 'teams' ? (

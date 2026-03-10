@@ -12,7 +12,7 @@ export default function Header({ user, onLogout, onToggleSidebar }: HeaderProps)
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     return (
-        <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 px-4 sm:px-6 py-2.5 flex justify-between items-center sticky top-0 z-50 transition-colors">
+        <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 px-4 sm:px-6 py-2 sm:py-2.5 flex justify-between items-center sticky top-0 z-50 transition-colors">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onToggleSidebar}

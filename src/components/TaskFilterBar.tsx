@@ -24,7 +24,7 @@ export const TaskFilterBar = ({
     onNewTask
 }: TaskFilterBarProps) => {
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-sm transition-all rounded-none sticky top-14 lg:top-16 z-30 space-y-5">
+        <div className="bg-white dark:bg-slate-900 pb-3 border border-slate-200 dark:border-slate-800 p-3 sm:p-5 shadow-sm transition-all rounded-none sticky top-14 lg:top-16 z-30 space-y-4 sm:space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="flex items-center flex-wrap gap-3">
                     <select

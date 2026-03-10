@@ -149,7 +149,7 @@ export default function DashboardPage({
     const normalTasks = filteredTasks.filter(t => t.priority !== 'HIGH');
 
     return (
-        <div className="space-y-6 sm:space-y-8 pb-12">
+        <div className="flex flex-col gap-4 sm:gap-8 pb-12">
             <TaskHeader
                 currentView={currentView}
                 departments={departments}
